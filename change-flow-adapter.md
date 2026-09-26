@@ -52,3 +52,5 @@ npm run build
 - **시크릿 출처**: `pass show github.com/initbtn` (on-demand 주입)
 - **외부 공개 금지**: 개인 식별 키, 비공개 토큰 코드 하드코딩 금지
 - **TDD Iron Law**: production 코드 작성 전 실패하는 테스트(RED) 선행 작성
+
+| **프로젝트(◦)** | **2** (owner: `initbtn`, URL: https://github.com/users/initbtn/projects/2) |
