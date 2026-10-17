@@ -28,3 +28,5 @@ coverage/
 
 # Domstack temporary
 .claude/review/
+.vercel
+.env*

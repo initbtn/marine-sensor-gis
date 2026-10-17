@@ -4,10 +4,13 @@
 
 [![CI Pipeline](https://github.com/initbtn/marine-sensor-gis/actions/workflows/ci.yml/badge.svg)](https://github.com/initbtn/marine-sensor-gis/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
 [![Leaflet](https://img.shields.io/badge/Leaflet-GIS-199900.svg)](https://leafletjs.com/)
 [![ECharts](https://img.shields.io/badge/Apache-ECharts-aa344d.svg)](https://echarts.apache.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Dual_Schema-3ECF8E.svg)](https://supabase.com/)
+[![GCP Edge](https://img.shields.io/badge/GCP-e2--micro_Edge_PC-4285F4.svg)](https://cloud.google.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Dual_DB_Realtime-3ECF8E.svg)](https://supabase.com/)
+[![Cloudflare R2](https://img.shields.io/badge/Cloudflare_R2-Zero_Egress_Archive-F38020.svg)](https://www.cloudflare.com/developer-platform/r2/)
+[![Vercel](https://img.shields.io/badge/Vercel-Edge_Proxy_&_Web-black.svg)](https://vercel.com/)
 
 ---
 
@@ -27,39 +30,47 @@
 
 ---
 
-## 2. 시스템 아키텍처 (System Architecture)
+## 2. 4대 클라우드-엣지 인프라 아키텍처 (Cloud-Edge Architecture)
 
-선박의 열악한 위성 통신 환경과 IACS UR E26/E27 사이버 복원력 표준을 충족하기 위해 **선박 온보드 로컬 에지(Edge)**와 **육상 대용량 관제 클라우드(Control)**의 2원화 데이터 아키텍처를 채택했습니다.
+선박의 열악한 위성 통신 환경과 IACS UR E26/E27 사이버 복원력 표준을 충족하기 위해 **선박 온보드 로컬 에지(GCP VM)**, **실시간 데이터 허브(Supabase)**, **법정 24개월 무과금 아카이브(Cloudflare R2)**, **엣지 프록시 웹앱(Vercel)**의 4대 인프라 유기적 결합 아키텍처를 채택했습니다.
 
 ```mermaid
 flowchart TD
-    subgraph Onboard ["🚢 선박 기관실 (Onboard Edge)"]
-        SENSORS["선박 친환경 설비 센서<br>(CEMS, pH, 유량, 차압)"] -->|1초 주기 Raw| EDGE_DB[("선박 로컬 에지 DB<br>(marine_edge 스키마)")]
-        EDGE_DB --> FIFO["7~30일 롤링 버퍼<br>(FIFO 자동 회전)"]
-        EDGE_DB --> SYNC_QUEUE["Store-and-Forward 큐<br>(PENDING 상태 보관)"]
+    subgraph EdgePC ["🚢 선박 엣지 컴퓨터 (GCP us-central1 e2-micro / Docker)"]
+        SENSORS["10Hz 친환경 설비 센서 발생기<br>(CEMS, pH, 유량, 차압)"] --> POLARS["Polars 롤링 윈도우 집계<br>& IMO 임계치 1차 판정"]
+        POLARS --> ONNX["ONNX Runtime 경량 추론<br>(5축 설비 건전성 이상탐지)"]
+        ONNX --> LOCAL_BUF[("선박 로컬 버퍼 (FIFO 30일)<br>marine_edge 스키마")]
+        LOCAL_BUF --> SYNC_ENGINE["Store-and-Forward 동기화 엔진<br>(위성 단절 시 로컬 큐잉)"]
     end
 
-    subgraph SatCom ["🛰️ 해상 위성 통신망 (Inmarsat / Starlink)"]
-        SYNC_QUEUE -->|위성 연결 시 배치 전송| SYNC_ENGINE["Store-and-Forward 동기화 엔진"]
-        AIS_STREAM["AISStream.io WebSocket<br>(실시간 선박 위치)"] -.->|하이브리드 피드| SYNC_ENGINE
+    subgraph SatLink ["🛰️ 해상 위성 통신망 (VSAT / Starlink)"]
+        SYNC_ENGINE -->|위성 연결 시 1초/5초 배치 전송| SUPABASE
+        DOWNLINK["원격 밸브 제어 / 위성 토글 다운링크"] -.->|HTTPS 포워딩| EdgePC
     end
 
-    subgraph Inland ["🏢 육상 관제 센터 (Inland Cloud)"]
-        SYNC_ENGINE --> CLOUD_DB[("Supabase 클라우드 DB<br>(marine_control 스키마)")]
-        CLOUD_DB --> VESSELS["선박 마스터 제원 & PostGIS 위치"]
-        CLOUD_DB --> SUMMARY["1시간/1일 통계 집계 요약"]
-        CLOUD_DB --> ALARMS["선급/법정 규제 위반 알람"]
-        CLOUD_DB --> DIAG["판호크 예지보전 헬스 지표"]
+    subgraph CloudHub ["🏢 실시간 데이터 & 웹소켓 허브 (Supabase PostgreSQL 16)"]
+        SUPABASE[("Supabase DB")]
+        SUPABASE --> SCH_EDGE["marine_edge (선박 버퍼)"]
+        SUPABASE --> SCH_CTRL["marine_control (지상 관제 마스터)"]
+        SCH_CTRL --> REALTIME["Supabase Realtime 엔진<br>(Postgres CDC 웹소켓 푸시)"]
     end
 
-    subgraph Dashboard ["💻 모던 데이터 시각화 대시보드 (React 18 + TypeScript)"]
-        VESSELS & SUMMARY & ALARMS & DIAG --> WEB_APP["EcoMarine Control UI"]
-        WEB_APP --> R1["🚢 선박 기관사 뷰<br>(0ms 고주파 원형 게이지)"]
-        WEB_APP --> R2["🏢 육상 관제관 뷰<br>(Leaflet GIS + 선단 도넛)"]
-        WEB_APP --> R3["⚖️ 규제 감사관 뷰<br>(MARPOL/BWM 전자기록부)"]
-        WEB_APP --> R4["🔧 원격 진단원 뷰<br>(5축 헬스 레이더 + 산점도)"]
+    subgraph ColdArchive ["📦 제로 이그레스 아카이브 (Cloudflare R2)"]
+        SCH_CTRL -->|자정 일일 압축 배치| R2_STORAGE[("Cloudflare R2 S3 버킷")]
+        R2_STORAGE --> PARQUET["24개월 선급 법정 Parquet 로그"]
+        R2_STORAGE --> ERB_PDF["선급 제출용 전자보고서 PDF"]
+        R2_STORAGE --> ENC_TILES["글로벌 ECA/전자해도 벡터 타일"]
+    end
+
+    subgraph WebPlatform ["💻 프론트엔드 & 엣지 프록시 (Vercel / React 19)"]
+        REALTIME -->|0ms 지연 WebSocket 스트림| REACT_APP["EcoMarine 대시보드"]
+        REACT_APP --> PROXY["/api/edge/* 엣지 프록시<br>(HTTPS/CORS 브릿지)"]
+        PROXY --> DOWNLINK
+        ENC_TILES --> REACT_APP
     end
 ```
+
+> 📖 **상세 아키텍처 명세서**: [`docs/spec/maritime-cloud-edge-architecture.md`](./docs/spec/maritime-cloud-edge-architecture.md)
 
 ---
 
@@ -78,13 +89,13 @@ flowchart TD
 
 ## 4. 데이터 시각화 디자인 시스템 (Design System)
 
-**IBM Carbon Design System**의 고대비 엔터프라이즈 데이터 시각화 표준과 **Tremor / Grafana UI**의 모던 메트릭 카드 패턴을 융합한 해양 전용 다크 테마를 적용했습니다:
+**IBM Carbon Design System**의 고대비 엔터프라이즈 데이터 시각화 표준과 **ISA-101 / IEC 62288** 고성능 HMI 규율을 융합한 해양 전용 다크 테마를 적용했습니다:
 
 - **Deep Marine Background**: `#0B132B` / `#1C2541` (관제실 최적화 심해 네이비)
 - **Eco Cyan (Brand / Compliant)**: `#00F5D4` / `#48CAE4` (친환경 정상 상태)
 - **Warning Amber**: `#FF9F1C` (임계치 접근 경보)
-- **Critical Crimson**: `#E71D36` (IMO 규제 초과 위험)
-- **High-Contrast Text**: `#F8F9FA` / `#ADB5BD`
+- **Critical Crimson**: `#E71D36` (IMO 규제 초과 위험 / 1Hz 미확인 경보 점멸)
+- **Zero Decorative Animation**: 시각 피로 및 알람 인지 방해를 원천 차단하기 위해 회전 팬, 유동 펄스 등 장식용 애니메이션을 배제하고 정적 고대비 색상으로 상태 전달.
 
 ---
 
@@ -92,12 +103,13 @@ flowchart TD
 
 | 영역 | 기술 스택 | 비고 |
 |---|---|---|
-| **Frontend Framework** | React 18, TypeScript, Vite | 컴포넌트 주도 개발 (CDD) |
+| **Frontend Framework** | React 19, TypeScript, Vite | 컴포넌트 주도 개발 (CDD), Vercel 배포 |
+| **Edge Reverse Proxy** | Vercel Serverless / Rewrites (`/api/edge`) | HTTPS 혼합 콘텐츠 방지 및 제어 다운링크 |
 | **GIS & Mapping** | Leaflet, React-Leaflet | 선수 침로 회전 렌더링, 항적 폴리라인, ECA 해역 |
-| **Data Visualization** | Apache ECharts, echarts-for-react | 게이지, 시계열 라인, 레이더, 히트맵, 도넛/막대 |
-| **Icons & UI** | Lucide React | 산업 관제 표준 인디케이터 |
-| **Backend & Cloud DB** | Supabase (PostgreSQL 15), PostGIS | 2중 스키마 (`marine_edge` ⇄ `marine_control`) |
-| **External Live AIS** | AISStream.io (WebSocket) | 실시간 선박 위치 하이브리드 피드 (자동 폴백 지원) |
+| **Data Visualization** | Apache ECharts, echarts-for-react | 8대 시각화 제품군 (게이지, 시계열, 레이더, 히트맵 등) |
+| **Edge Computer** | GCP GCE `e2-micro` (Docker, Python 3.11) | Polars, FastAPI, ONNX Runtime (Always Free $0) |
+| **Backend & Cloud DB** | Supabase (PostgreSQL 16), PostGIS | 2중 스키마 (`marine_edge` ⇄ `marine_control`) + Realtime |
+| **Object Storage** | Cloudflare R2 (S3-compatible) | 법정 24개월 Parquet 아카이브, 전자해도 타일 (Zero Egress) |
 | **Testing & CI** | Vitest, Testing Library, JSDOM, GitHub Actions | 100% TDD 커버리지 파이프라인 |
 
 ---
@@ -113,23 +125,12 @@ flowchart TD
 npm install
 ```
 
-### 2) 환경 변수 설정 (선택 사항)
-`.env.example`을 복사하여 `.env`를 생성합니다. 외부 API 키가 없어도 내장된 고정밀 시뮬레이터로 100% 정상 작동합니다:
-```bash
-# AISStream.io 실시간 선박 위치 수집 키 (선택)
-VITE_AISSTREAM_API_KEY=your_key_here
-
-# Supabase 연동 키 (선택, 미설정 시 로컬 인메모리 에지 모드로 동작)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### 3) 로컬 개발 서버 기동
+### 2) 로컬 개발 서버 기동
 ```bash
 npm run dev
 ```
 
-### 4) 단위 테스트 및 빌드 검증
+### 3) 단위 테스트 및 빌드 검증
 ```bash
 # Vitest 단위 테스트 (TDD)
 npm run test
@@ -146,11 +147,12 @@ npm run build
 ## 7. 프로젝트 문서 및 거버넌스
 
 - **기획 정본 명세서**: [`docs/project-planning.md`](./docs/project-planning.md)
+- **4대 인프라 아키텍처 명세서**: [`docs/spec/maritime-cloud-edge-architecture.md`](./docs/spec/maritime-cloud-edge-architecture.md)
 - **선급 및 IMO 표준 인증 가이드**: [`docs/domain/maritime-class-standards.md`](./docs/domain/maritime-class-standards.md)
 - **실무자 도메인 UX 규율 가이드**: [`docs/domain/maritime-ux-rules.md`](./docs/domain/maritime-ux-rules.md)
 - **데이터 시각화 매트릭스 명세서**: [`docs/spec/data-visualization-matrix.md`](./docs/spec/data-visualization-matrix.md)
+- **파이썬 데이터 시각화 트렌드**: [`docs/spec/python-data-viz-trend.md`](./docs/spec/python-data-viz-trend.md)
 - **프론트엔드 스토리보드 및 스펙**: [`docs/front-spec.md`](./docs/front-spec.md)
-- **PRD 및 IA 아키텍처 명세서**: [`docs/antigravity-prd-ia-spec.md`](./docs/antigravity-prd-ia-spec.md)
 - **GitHub Projects v2 보드**: [Marine Sensor GIS Project Board (#2)](https://github.com/users/initbtn/projects/2)
 - **프로젝트 체인지 플로우 규율**: [`change-flow-adapter.md`](./change-flow-adapter.md)
 
@@ -162,8 +164,6 @@ npm run build
 |---|---|---|---|---|
 | **Sprint 1** | **도메인 UX 규율 & 4대 직무 스토리보드** | [Sprint 1 Report](./docs/scrum/sprint-1-report.md) | [Sprint 1 Slides](./docs/scrum/sprint-1-slides.md) | **COMPLETED** |
 | **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | [Sprint 2 Report](./docs/scrum/sprint-2-report.md) | [Sprint 2 Slides](./docs/scrum/sprint-2-slides.md) | **COMPLETED** |
-| **Sprint 3** | **Supabase 2중 스키마 & 데이터 파이프라인** | [Sprint 3 Report](./docs/scrum/sprint-3-report.md) | [Sprint 3 Slides](./docs/scrum/sprint-3-slides.md) | ⏳ 대기 |
+| **Sprint 3** | **Supabase 2중 스키마 & 데이터 파이프라인** | [Sprint 3 Report](./docs/scrum/sprint-3-report.md) | [Sprint 3 Slides](./docs/scrum/sprint-3-slides.md) | 🚀 착수 |
 | **Sprint 4** | **4대 직무별 맞춤 대시보드 통합 조립** | [Sprint 4 Report](./docs/scrum/sprint-4-report.md) | [Sprint 4 Slides](./docs/scrum/sprint-4-slides.md) | ⏳ 대기 |
 | **Sprint 5** | **종합 E2E 검증 및 선급 감사 시연** | [Sprint 5 Report](./docs/scrum/sprint-5-report.md) | [Sprint 5 Slides](./docs/scrum/sprint-5-slides.md) | ⏳ 대기 |
-
-
