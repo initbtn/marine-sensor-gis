@@ -131,7 +131,7 @@ export async function fetchVesselSpecs(
   serviceKey: string,
   query: { vsslNm?: string; clsgn?: string; pageNo?: number; numOfRows?: number } = {}
 ): Promise<PortMisVesselSpec[]> {
-  const url = new URL('http://apis.data.go.kr/1192000/SicsVsslManp3/Info3');
+  const url = new URL('https://apis.data.go.kr/1192000/SicsVsslManp3/Info3');
   url.searchParams.set('serviceKey', serviceKey);
   url.searchParams.set('pageNo', String(query.pageNo || 1));
   url.searchParams.set('numOfRows', String(query.numOfRows || 10));

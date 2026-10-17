@@ -4,6 +4,7 @@ import {
   TelemetryBufferRecord,
   SyncResult,
 } from '../src/services/dualDbSyncEngine';
+import { sha256 } from 'js-sha256';
 
 describe('DualDbSyncEngine (Store-and-Forward Engine)', () => {
   let engine: DualDbSyncEngine;
@@ -25,16 +26,22 @@ describe('DualDbSyncEngine (Store-and-Forward Engine)', () => {
     mockUploader = vi.fn().mockResolvedValue(true);
     engine = new DualDbSyncEngine({
       batchSize: 5,
+      maxBufferSize: 20,
       uploader: mockUploader,
     });
   });
 
-  it('generates SHA-256 data integrity hash upon queuing record', () => {
+  it('generates standard NIST SHA-256 data integrity hash upon queuing record', () => {
     const record = engine.queueTelemetry(sampleRecord);
     expect(record.id).toBeDefined();
     expect(record.status).toBe('PENDING');
     expect(record.dataIntegrityHash).toBeDefined();
-    expect(record.dataIntegrityHash.length).toBe(64); // SHA-256 hex string length
+    expect(record.dataIntegrityHash.length).toBe(64);
+
+    // Verify against standard NIST reference sha256
+    const serialized = JSON.stringify(sampleRecord, Object.keys(sampleRecord).sort());
+    const expectedNistHash = sha256(serialized);
+    expect(record.dataIntegrityHash).toBe(expectedNistHash);
   });
 
   it('buffers records when satellite link is offline (air-gap simulation)', async () => {
@@ -53,14 +60,12 @@ describe('DualDbSyncEngine (Store-and-Forward Engine)', () => {
   it('automatically flushes pending buffer when satellite link reconnects', async () => {
     engine.setSatelliteLink(false);
 
-    // Queue 3 records while offline
     engine.queueTelemetry(sampleRecord);
     engine.queueTelemetry({ ...sampleRecord, timestamp: '2026-10-18T00:00:01.000Z' });
     engine.queueTelemetry({ ...sampleRecord, timestamp: '2026-10-18T00:00:02.000Z' });
 
     expect(engine.getQueueStats().pendingCount).toBe(3);
 
-    // Reconnect satellite link
     const syncResult: SyncResult = await engine.setSatelliteLink(true);
 
     expect(syncResult.success).toBe(true);
@@ -76,7 +81,6 @@ describe('DualDbSyncEngine (Store-and-Forward Engine)', () => {
   it('splits large offline queues into batches according to batchSize', async () => {
     engine.setSatelliteLink(false);
 
-    // Queue 12 records with batchSize = 5 -> should result in 3 batches (5 + 5 + 2)
     for (let i = 0; i < 12; i++) {
       engine.queueTelemetry({
         ...sampleRecord,
@@ -92,6 +96,45 @@ describe('DualDbSyncEngine (Store-and-Forward Engine)', () => {
     expect(syncResult.syncedCount).toBe(12);
     expect(mockUploader).toHaveBeenCalledTimes(3);
     expect(engine.getQueueStats().pendingCount).toBe(0);
+  });
+
+  it('prevents duplicate upload race conditions when rapidly queueing while online', async () => {
+    const uploadedIds: string[] = [];
+    mockUploader.mockImplementation(async (records: TelemetryBufferRecord[]) => {
+      records.forEach((r) => uploadedIds.push(r.id));
+      await new Promise((r) => setTimeout(r, 20));
+      return true;
+    });
+
+    // Rapidly queue 3 records
+    engine.queueTelemetry(sampleRecord);
+    engine.queueTelemetry({ ...sampleRecord, timestamp: '2026-10-18T00:00:01.000Z' });
+    engine.queueTelemetry({ ...sampleRecord, timestamp: '2026-10-18T00:00:02.000Z' });
+
+    // Wait for in-flight sync to complete
+    await new Promise((r) => setTimeout(r, 100));
+
+    // Must not have duplicate IDs
+    const uniqueIds = new Set(uploadedIds);
+    expect(uploadedIds.length).toBe(uniqueIds.size);
+  });
+
+  it('prunes oldest synced records when exceeding maxBufferSize', async () => {
+    engine.setSatelliteLink(false);
+
+    // Queue 25 records when maxBufferSize is 20
+    for (let i = 0; i < 25; i++) {
+      engine.queueTelemetry({
+        ...sampleRecord,
+        timestamp: `2026-10-18T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      });
+    }
+
+    await engine.setSatelliteLink(true);
+
+    const stats = engine.getQueueStats();
+    expect(stats.totalBufferSize).toBeLessThanOrEqual(20);
+    expect(stats.pendingCount).toBe(0);
   });
 
   it('keeps records in PENDING status if uploader fails', async () => {
