@@ -63,4 +63,23 @@ test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
     // 리액트 크래시 또는 치명적 미처리 런타임 예외가 없어야 함
     expect(errorLogs).toEqual([]);
   });
+
+  test('선박 에지 ⇄ 내륙 클라우드 모드 토글 및 위성 네트워크 상태 전환이 동작해야 한다', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    // 1. 관제 모드 토글 검증
+    const cloudBtn = page.getByText('🏢 내륙 클라우드');
+    await expect(cloudBtn).toBeVisible();
+    await cloudBtn.click();
+
+    // 2. 위성 네트워크 상태 토글 검증
+    const networkBtn = page.getByTestId('network-toggle-btn');
+    await expect(networkBtn).toBeVisible();
+    await networkBtn.click();
+    await expect(page.getByText(/위성 링크 단절 \(Offline\)/i)).toBeVisible();
+
+    // 3. 대기 큐 인디케이터 표시 검증
+    await expect(page.getByText(/대기 큐:/i)).toBeVisible();
+  });
 });

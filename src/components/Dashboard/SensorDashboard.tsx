@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   VesselInfo,
   ScrubberTelemetry,
@@ -12,10 +12,18 @@ import {
   evaluateAlarms,
   createRealtimePacket,
 } from '../../services/mockTelemetry';
+import { dualDbSyncEngine } from '../../services/dualDbSyncEngine';
+import { sendTelegramAlert } from '../../services/telegramAlertService';
 import { MarineMap } from '../Map/MarineMap';
 import { TelemetryChart } from '../Chart/TelemetryChart';
 import { SensorCards } from './SensorCards';
 import { AlarmList } from './AlarmList';
+import {
+  ModeToggleBar,
+  OperatingMode,
+  NetworkStatus,
+  SyncState,
+} from './ModeToggleBar';
 
 export const SensorDashboard: React.FC = () => {
   const [vessels, setVessels] = useState<VesselInfo[]>(INITIAL_VESSELS);
@@ -23,9 +31,21 @@ export const SensorDashboard: React.FC = () => {
   const [facilityTab, setFacilityTab] = useState<'SCRUBBER' | 'BWTS'>('SCRUBBER');
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
 
+  // 2원화 관제 모드 및 위성 네트워크 / 동기화 상태
+  const [operatingMode, setOperatingMode] = useState<OperatingMode>('EDGE');
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>('ONLINE');
+  const [syncStatus, setSyncStatus] = useState<SyncState>('IDLE');
+  const [pendingCount, setPendingCount] = useState<number>(() =>
+    dualDbSyncEngine.getQueueLength()
+  );
+
   // 선택된 선박의 텔레메트리 상태 및 이력
-  const [currentScrubber, setCurrentScrubber] = useState<ScrubberTelemetry>(() => generateScrubberTelemetry());
-  const [currentBWTS, setCurrentBWTS] = useState<BWTSTelemetry>(() => generateBWTSTelemetry());
+  const [currentScrubber, setCurrentScrubber] = useState<ScrubberTelemetry>(() =>
+    generateScrubberTelemetry()
+  );
+  const [currentBWTS, setCurrentBWTS] = useState<BWTSTelemetry>(() =>
+    generateBWTSTelemetry()
+  );
   const [history, setHistory] = useState<
     Array<{ timestamp: string; scrubber: ScrubberTelemetry; bwts: BWTSTelemetry }>
   >([]);
@@ -52,6 +72,34 @@ export const SensorDashboard: React.FC = () => {
     () => vessels.find((v) => v.id === selectedVesselId) || vessels[0],
     [vessels, selectedVesselId]
   );
+
+  // Store-and-Forward 동기화 핸들러
+  const handleManualFlush = useCallback(async () => {
+    if (networkStatus === 'OFFLINE' || syncStatus === 'SYNCING') return;
+
+    setSyncStatus('SYNCING');
+    try {
+      await dualDbSyncEngine.flushSyncQueue();
+      setPendingCount(dualDbSyncEngine.getQueueLength());
+      setSyncStatus('IDLE');
+    } catch {
+      setSyncStatus('ERROR');
+    }
+  }, [networkStatus, syncStatus]);
+
+  // 네트워크 상태 토글 핸들러
+  const handleToggleNetwork = useCallback(() => {
+    setNetworkStatus((prev) => {
+      const next = prev === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+      if (next === 'ONLINE') {
+        // 온라인 복구 시 자동 백그라운드 동기화 트리거
+        dualDbSyncEngine.flushSyncQueue().then(() => {
+          setPendingCount(dualDbSyncEngine.getQueueLength());
+        });
+      }
+      return next;
+    });
+  }, []);
 
   // 실시간 텔레메트리 갱신 루프 (2초 주기)
   useEffect(() => {
@@ -89,6 +137,20 @@ export const SensorDashboard: React.FC = () => {
       setCurrentScrubber(newScrubber);
       setCurrentBWTS(newBWTS);
 
+      // Store-and-Forward 오프라인 큐 적재 (위성 링크 단절 시)
+      if (networkStatus === 'OFFLINE') {
+        dualDbSyncEngine.enqueueRecord({
+          vessel_id: selectedVesselId,
+          sox_ppm: newScrubber.soxPpm,
+          ph_inlet: newScrubber.phInlet,
+          ph_discharge: newScrubber.phDischarge,
+          turbidity_ftu: newScrubber.turbidityFtu,
+          bwts_flow_rate_m3h: newBWTS.flowRateM3h,
+          bwts_tro_ppm: newBWTS.troPpm,
+        });
+        setPendingCount(dualDbSyncEngine.getQueueLength());
+      }
+
       setHistory((prev) => [
         ...prev.slice(-15),
         {
@@ -102,11 +164,22 @@ export const SensorDashboard: React.FC = () => {
       const newAlarms = evaluateAlarms(selectedVessel, newScrubber, newBWTS);
       if (newAlarms.length > 0) {
         setAlarms((prev) => [...newAlarms, ...prev].slice(0, 30));
+
+        // CRITICAL 경보 발생 시 멀티 프로젝트 텔레그램 공용 웹훅 알림 전송
+        const critical = newAlarms.find((a) => a.level === 'CRITICAL');
+        if (critical) {
+          sendTelegramAlert({
+            level: 'CRITICAL',
+            area: `${selectedVessel.name} (${critical.facilityType})`,
+            message: `${critical.code}: ${critical.message}`,
+            details: `선박 위치: ${selectedVessel.position.lat.toFixed(4)}°N, ${selectedVessel.position.lng.toFixed(4)}°E`,
+          });
+        }
       }
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isStreaming, selectedVesselId, selectedVessel]);
+  }, [isStreaming, selectedVesselId, selectedVessel, networkStatus]);
 
   const handleAcknowledgeAlarm = (alarmId: string) => {
     setAlarms((prev) =>
@@ -115,14 +188,31 @@ export const SensorDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '20px', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1e293b' }}>
+    <div
+      style={{
+        maxWidth: '1440px',
+        margin: '0 auto',
+        padding: '20px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        color: '#f8fafc',
+      }}
+    >
       {/* Header */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '16px' }}>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '16px',
+          borderBottom: '2px solid #334155',
+          paddingBottom: '16px',
+        }}
+      >
         <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#0f172a' }}>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: '#f8fafc' }}>
             🌊 해양 친환경 설비 실시간 센서 모니터링 &amp; GIS 관제 웹 플랫폼
           </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
             IMO 탈황 규제(MARPOL Annex VI) &amp; 선박평형수(BWTS D-2) 실시간 텔레메트리 관제 시스템
           </p>
         </div>
@@ -145,8 +235,27 @@ export const SensorDashboard: React.FC = () => {
         </div>
       </header>
 
+      {/* 2원화 HMI 관제 모드 및 위성 네트워크 / 동기화 바 */}
+      <ModeToggleBar
+        operatingMode={operatingMode}
+        networkStatus={networkStatus}
+        syncStatus={syncStatus}
+        pendingCount={pendingCount}
+        onToggleOperatingMode={setOperatingMode}
+        onToggleNetworkStatus={handleToggleNetwork}
+        onManualFlush={handleManualFlush}
+      />
+
       {/* Vessel Selector Strip */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '12px',
+          marginBottom: '16px',
+          overflowX: 'auto',
+          paddingBottom: '4px',
+        }}
+      >
         {vessels.map((vessel) => {
           const isSelected = vessel.id === selectedVesselId;
           return (
@@ -158,13 +267,13 @@ export const SensorDashboard: React.FC = () => {
                 padding: '12px 16px',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                background: isSelected ? '#eff6ff' : '#ffffff',
-                boxShadow: isSelected ? '0 2px 4px rgba(59,130,246,0.15)' : 'none',
+                border: isSelected ? '2px solid #0284c7' : '1px solid #334155',
+                background: isSelected ? '#1e293b' : '#0f172a',
+                boxShadow: isSelected ? '0 2px 4px rgba(2, 132, 199, 0.25)' : 'none',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '14px', color: '#0f172a' }}>{vessel.name}</strong>
+                <strong style={{ fontSize: '14px', color: '#f8fafc' }}>{vessel.name}</strong>
                 <span
                   style={{
                     fontSize: '11px',
@@ -173,22 +282,29 @@ export const SensorDashboard: React.FC = () => {
                     borderRadius: '4px',
                     background:
                       vessel.status === 'CRITICAL'
-                        ? '#fee2e2'
+                        ? 'rgba(239, 68, 68, 0.2)'
                         : vessel.status === 'WARNING'
-                        ? '#fef3c7'
-                        : '#dcfce7',
+                        ? 'rgba(234, 179, 8, 0.2)'
+                        : 'rgba(34, 197, 94, 0.2)',
                     color:
                       vessel.status === 'CRITICAL'
-                        ? '#b91c1c'
+                        ? '#f87171'
                         : vessel.status === 'WARNING'
-                        ? '#b45309'
-                        : '#15803d',
+                        ? '#facc15'
+                        : '#4ade80',
+                    border: `1px solid ${
+                      vessel.status === 'CRITICAL'
+                        ? 'rgba(239, 68, 68, 0.4)'
+                        : vessel.status === 'WARNING'
+                        ? 'rgba(234, 179, 8, 0.4)'
+                        : 'rgba(34, 197, 94, 0.4)'
+                    }`,
                   }}
                 >
                   {vessel.status}
                 </span>
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
                 IMO {vessel.imoNumber} | {vessel.destination}
               </div>
             </div>
@@ -199,11 +315,29 @@ export const SensorDashboard: React.FC = () => {
       {/* Main Grid: GIS Map (Left) & Sensor Details (Right) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
         {/* Left Column: GIS Map */}
-        <div style={{ background: '#ffffff', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '16px' }}>🗺️ 해양 GIS 선박 위치 및 항적 관제</h3>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>
-              선박 위치: {selectedVessel.position.lat.toFixed(4)}°N, {selectedVessel.position.lng.toFixed(4)}°E
+        <div
+          style={{
+            background: '#0f172a',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            border: '1px solid #334155',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc' }}>
+              🗺️ 해양 GIS 선박 위치 및 항적 관제
+            </h3>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+              선박 위치: {selectedVessel.position.lat.toFixed(4)}°N,{' '}
+              {selectedVessel.position.lng.toFixed(4)}°E
             </span>
           </div>
           <MarineMap
@@ -225,8 +359,8 @@ export const SensorDashboard: React.FC = () => {
                 padding: '10px',
                 borderRadius: '6px',
                 border: 'none',
-                background: facilityTab === 'SCRUBBER' ? '#1e293b' : '#e2e8f0',
-                color: facilityTab === 'SCRUBBER' ? '#ffffff' : '#475569',
+                background: facilityTab === 'SCRUBBER' ? '#0284c7' : '#1e293b',
+                color: facilityTab === 'SCRUBBER' ? '#ffffff' : '#94a3b8',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '13px',
@@ -241,8 +375,8 @@ export const SensorDashboard: React.FC = () => {
                 padding: '10px',
                 borderRadius: '6px',
                 border: 'none',
-                background: facilityTab === 'BWTS' ? '#1e293b' : '#e2e8f0',
-                color: facilityTab === 'BWTS' ? '#ffffff' : '#475569',
+                background: facilityTab === 'BWTS' ? '#0d9488' : '#1e293b',
+                color: facilityTab === 'BWTS' ? '#ffffff' : '#94a3b8',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '13px',
@@ -256,7 +390,16 @@ export const SensorDashboard: React.FC = () => {
           <SensorCards scrubber={currentScrubber} bwts={currentBWTS} />
 
           {/* ECharts Telemetry Chart */}
-          <div style={{ background: '#ffffff', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', marginTop: '16px' }}>
+          <div
+            style={{
+              background: '#0f172a',
+              borderRadius: '8px',
+              padding: '16px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              border: '1px solid #334155',
+              marginTop: '16px',
+            }}
+          >
             <TelemetryChart facilityType={facilityTab} history={history} />
           </div>
         </div>

@@ -75,4 +75,7 @@ npm run build
 - **외부 공개 금지**: 개인 식별 키, 비공개 토큰 코드 하드코딩 금지
 - **Zero Decorative Animation Rule**: ISA-101 / IEC 62288에 따라 깜빡임은 미확인 크리티컬 알람에만 한정
 
+| 파라미터 | 값 |
+|---|---|
 | **프로젝트(◦)** | **2** (owner: `initbtn`, URL: https://github.com/users/initbtn/projects/2) |
+| **알림** | 텔레그램 봇 알림 (토큰: `pass show telegram/bot-token` / chat_id: `pass show telegram/chat-id` / 식별자: `marine-sensor-gis (선박 친환경 설비 관제)`) |
