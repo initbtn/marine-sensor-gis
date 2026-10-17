@@ -198,4 +198,47 @@ export class DualDbSyncEngine {
       lastSyncTime: this.lastSyncTime,
     };
   }
+
+  /**
+   * Convenience helper to return pending count
+   */
+  public getQueueLength(): number {
+    return this.getQueueStats().pendingCount;
+  }
+
+  /**
+   * Convenience helper to flush sync queue
+   */
+  public async flushSyncQueue(): Promise<SyncResult> {
+    return this.syncPendingRecords();
+  }
+
+  /**
+   * Convenience helper to enqueue telemetry from UI
+   */
+  public enqueueRecord(data: {
+    vessel_id: string;
+    sox_ppm?: number;
+    ph_inlet?: number;
+    ph_discharge?: number;
+    turbidity_ftu?: number;
+    bwts_flow_rate_m3h?: number;
+    bwts_tro_ppm?: number;
+  }): TelemetryBufferRecord {
+    return this.queueTelemetry({
+      vesselId: data.vessel_id,
+      timestamp: new Date().toISOString(),
+      scrubberSo2Co2Ratio: data.sox_ppm,
+      scrubberPh: data.ph_discharge,
+      scrubberTurbidity: data.turbidity_ftu,
+      bwtsTro: data.bwts_tro_ppm,
+    });
+  }
 }
+
+/**
+ * Global singleton instance for UI & application use
+ */
+export const dualDbSyncEngine = new DualDbSyncEngine({
+  uploader: async () => true,
+});

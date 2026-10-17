@@ -69,10 +69,42 @@ npm run build
 
 ---
 
-## 5. 거버넌스 및 시크릿
+## 5. 거버넌스, 시크릿 및 모니터링 알림 도구
 
 - **시크릿 출처**: `pass show github.com/initbtn` (on-demand 주입)
 - **외부 공개 금지**: 개인 식별 키, 비공개 토큰 코드 하드코딩 금지
 - **Zero Decorative Animation Rule**: ISA-101 / IEC 62288에 따라 깜빡임은 미확인 크리티컬 알람에만 한정
 
+| 파라미터 | 값 |
+|---|---|
 | **프로젝트(◦)** | **2** (owner: `initbtn`, URL: https://github.com/users/initbtn/projects/2) |
+| **알림 채널** | 텔레그램 봇 알림 (토큰: `pass show telegram/bot-token` / chat_id: `pass show telegram/chat-id` / 프로젝트 헤더: `[marine-sensor-gis]`) |
+
+### 모니터링 & try-catch 예외 알림 도구 (Alerting Tools)
+
+멀티 프로젝트 공용 텔레그램 봇 환경에서 타 프로젝트(`busan-youth-day` 등)와의 채널 혼선을 방지하고 장애를 신속히 전파하기 위해, 아래 2가지 엔트리포인트를 툴로 사용합니다:
+
+1. **CLI / 배치 / 스크립트 모니터링 툴**:
+   - 엔트리포인트: [`scripts/notify-telegram.sh`](file:///home/dominic/projects/marine-sensor-gis/scripts/notify-telegram.sh)
+   - 문법: `./scripts/notify-telegram.sh <LEVEL: INFO|WARNING|CRITICAL> <AREA> <MESSAGE> [DETAILS]`
+   - 예시 (CI/CD 배포 실패, 스크립트 try-catch 알림):
+     ```bash
+     ./scripts/notify-telegram.sh CRITICAL "Deployment" "Vercel production deploy failed" "error log SHA: abc1234"
+     ```
+
+2. **애플리케이션 런타임 서비스 (TypeScript try-catch)**:
+   - 엔트리포인트: [`src/services/telegramAlertService.ts`](file:///home/dominic/projects/marine-sensor-gis/src/services/telegramAlertService.ts)
+   - 모니터링 및 센서 스트림 예외 처리 블록에서 호출:
+     ```typescript
+     try {
+       await connectGcpEdgeSocket();
+     } catch (err) {
+       await sendTelegramAlert({
+         level: 'CRITICAL',
+         area: 'GCP-Edge-Stream',
+         message: 'GCP 10Hz 텔레메트리 스트림 연결 두절',
+         details: err instanceof Error ? err.message : String(err),
+       });
+     }
+     ```
+
