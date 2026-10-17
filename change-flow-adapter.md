@@ -1,6 +1,6 @@
 # Change-Flow Project Adapter: `marine-sensor-gis`
 
-이 문서는 `marine-sensor-gis` 저장소 고유의 실행 파라미터와 진입점을 정의하는 프로젝트 어댑터 정본(SSOT)입니다.
+이 문서는 `marine-sensor-gis` 저장소 고유의 실행 파라미터, 2-Tier 테스트 전략, 검증 진입점을 정의하는 프로젝트 어댑터 정본(SSOT)입니다.
 
 ---
 
@@ -12,26 +12,45 @@
 | **Base Branch** | `main` | 기본 프로덕션 브랜치 |
 | **Workspace Mode** | Single Repo (`/home/dominic/projects/marine-sensor-gis`) | 로컬 작업 공간 |
 | **Runtime & Node** | Node.js `v18.19.1` / npm `9.2.0` | 런타임 호환 환경 |
-| **Tech Stack** | React 18, Vite, TypeScript, Leaflet GIS, Apache ECharts, Vitest | 프론트엔드 및 시각화 스택 |
+| **Tech Stack** | React 18, Vite, TypeScript, Leaflet GIS, Apache ECharts, Vitest, Playwright | 프론트엔드, 시각화 및 테스트 스택 |
 
 ---
 
-## 2. 검증 및 빌드 커맨드 (Verification)
+## 2. 2-Tier 테스트 전략 (Test Architecture)
+
+우리 프로젝트는 변경 속도와 신뢰성을 동시에 확보하기 위해 테스트를 **2개의 계층(Tier)**으로 엄격히 분리하여 운영합니다:
+
+```
+[Tier 1: Client TDD Unit Tests] ──► 일상 개발 루프 (0ms, Vitest, 완전 격리 목데이터)
+[Tier 2: Post-Deploy / Debug E2E] ──► 배포 직후 & 디버깅 (Playwright, 인증/결제 수동 처리)
+```
+
+| 구분 | 도구 / 커맨드 | 격리 및 의존성 원칙 | 실행 시점 |
+|---|---|---|---|
+| **Tier 1<br>(Client TDD)** | **Vitest**<br>`npm run test`<br>`npm run test:watch` | • **외부 의존성 100% Mocking**: 공공데이터(PORT-MIS), Supabase DB, GCP 선박 엣지 VM, 위성 AIS를 로컬 모의 객체 및 픽스처로 격리<br>• 0ms 수준의 초고속 피드백 루프로 TDD(Red-Green-Refactor) 주도 | 코드 작성 및 로컬 커밋 전 상시 실행 |
+| **Tier 2<br>(E2E & Debug)** | **Playwright**<br>`npm run test:e2e`<br>`npm run test:e2e:ui` | • **배포 직후 검증 및 라이브 디버그**: 실제 브라우저 환경에서 HMI 대시보드 렌더링, 콘솔 에러, 레이아웃 스모크 테스트<br>• **인증/결제 수동 우회**: 외부 PG사 결제나 SSO 인증은 세션 쿠키(`marine_session_token`) 및 스토리지(`marine_license_tier`) 사전 주입으로 처리 | `change-flow` 배포(⑩) 직후 또는 크리티컬 디버깅 시 |
+
+---
+
+## 3. 검증 및 빌드 커맨드 (Verification)
 
 ```bash
-# 1. 단위 테스트 (Vitest TDD)
+# 1. Tier 1: 단위 및 통합 TDD 테스트 (Vitest Mock-based)
 npm run test
 
-# 2. 타입 검사
+# 2. 정적 타입 검사
 npm run type-check
 
-# 3. 프로덕션 빌드
+# 3. Tier 2: 배포 직후 및 디버그용 E2E 테스트 (Playwright)
+npm run test:e2e
+
+# 4. 프로덕션 번들 빌드
 npm run build
 ```
 
 ---
 
-## 3. 브랜치 및 변경 흐름 규약
+## 4. 브랜치 및 변경 흐름 규약
 
 1. **브랜치 네이밍**:
    - 기능 개발: `feat/<feature-slug>`
@@ -44,13 +63,16 @@ npm run build
    - `publish-pr` 스킬을 사용하여 PR 생성 (`closes #<issue>`)
    - `review-army`의 `reviewer` 서브에이전트 1개 소환 검증
    - 머지는 반드시 사용자의 명시적 승인 후 Squash Merge 집행
+4. **TDD Iron Law**:
+   - production 코드 작성 전 실패하는 단위 테스트(Tier 1 RED) 선행 작성 필수
+   - 배포 후 검증이 필요한 핵심 사용자 여정은 Tier 2 Playwright E2E에 추가 유지보수
 
 ---
 
-## 4. 거버넌스 및 시크릿
+## 5. 거버넌스 및 시크릿
 
 - **시크릿 출처**: `pass show github.com/initbtn` (on-demand 주입)
 - **외부 공개 금지**: 개인 식별 키, 비공개 토큰 코드 하드코딩 금지
-- **TDD Iron Law**: production 코드 작성 전 실패하는 테스트(RED) 선행 작성
+- **Zero Decorative Animation Rule**: ISA-101 / IEC 62288에 따라 깜빡임은 미확인 크리티컬 알람에만 한정
 
 | **프로젝트(◦)** | **2** (owner: `initbtn`, URL: https://github.com/users/initbtn/projects/2) |
