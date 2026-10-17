@@ -50,6 +50,7 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
           Sog: 12.0,
           Cog: 275.5,
           TrueHeading: 511, // NMEA 예외치: 센서 없음
+          NavigationalStatus: 0,
           Latitude: 34.5,
           Longitude: 128.8,
         },
