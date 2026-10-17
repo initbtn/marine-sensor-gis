@@ -1,0 +1,1159 @@
+선박운항정보 공공데이터
+Open API 활용가이드
+
+최종수정일: 2026.10.06
+
+Open API 활용가이드
+
+목 차
+
+1. 서비스 명세 .......................................................................................................................................................... 3
+1.1 선박운항정보 공공데이터 OpenAPI 조회 서비스 ................................................................................................... 3
+1.1.1
+
+API 서비스 개요 ................................................................................................................................................. 3
+
+1.1.2
+
+상세기능 목록 ...................................................................................................................................................... 4
+
+1.1.3
+
+상세기능내역 ........................................................................................................................................................ 4
+
+1.1.3.1
+
+[선박입출항신고조회] 상세기능명세
+
+4
+
+2. OpenAPI 에러 코드정리 .................................................................................................................................... 8
+
+- 2 -
+
+Open API 활용가이드
+
+1.
+
+서비스 명세
+
+1.1
+
+선박운항정보 공공데이터 OpenAPI 조회 서비스
+
+1.1.1
+
+API 서비스 개요
+API 명(영문)
+
+VsslEtrynd
+
+API 명(국문)
+
+선박운항정보 서비스
+
+API 서비스 정보
+
+항구,
+API 설명
+
+메시지 레벨
+암호화
+API 서비스
+
+전송 레벨 암호화
+
+입력
+
+파라미터를
+
+이용하여
+
+공공데이터를 조회 할 수 있는 선박운항정보 서비스
+
+[O] ServiceKey
+
+[ ] 인증서 (GPKI/NPKI)
+
+[ ] Basic (ID/PW)
+
+[ ] 없음
+
+[ ] 전자서명
+[ ] SSL
+
+[ ] 암호화
+
+[O] 없음
+
+[O] 없음
+
+[ ] SOAP 1.2
+
+보안적용
+기술 수준
+
+호출부호
+
+선박입출항신고에 대한 선박제반사항, 입출항일시, 선원수
+등의
+
+서비스 인증/권한
+
+조회기간,
+
+(RPC-Encoded,
+인터페이스 표준
+
+Document
+
+Literal,
+
+Document
+
+Wrapped)
+[O] REST (GET)
+[ ] RSS 1.0
+
+교환 데이터 표준
+(중복선택가능)
+서비스 URL
+서비스 명세 URL
+
+[O] XML
+
+[ ] RSS 2.0
+[ ] JSON
+
+[ ] Atom 1.0
+
+[ ] MIME
+
+[ ] 기타
+
+[ ] MTOM
+
+http://apis.data.go.kr/1192000/VsslEtrynd5
+n/a
+
+(WSDL 또는
+WADL)
+API 서비스
+배포정보
+
+서비스 버전
+
+1.0
+
+서비스 시작일
+
+2018-06-01
+
+서비스 이력
+
+2018-06-01 : 서비스 시작
+
+메시지 교환유형
+
+서비스 배포일
+
+[O] Request-Response
+[ ] Fire-and-Forgot
+
+2018-06-01
+
+[ ] Publish-Subscribe
+
+[ ] Notification
+
+서비스 제공자
+
+해양수산부 해운물류국 항만물류산업과 / 1670-3655
+
+데이터 갱신주기
+
+실시간
+
+- 3 -
+
+Literal
+
+Open API 활용가이드
+
+1.1.2
+
+상세기능 목록
+
+번호
+
+API 명(국문)
+
+1
+
+1.1.3
+
+상세기능명(영문)
+
+선박운항정보 서비스
+
+Info5
+
+상세기능명(국문)
+선박입출항신고조회
+
+상세기능내역
+
+1.1.3.1 [선박입출항신고조회] 상세기능명세
+
+a) 상세기능정보
+상세기능 번호
+
+1
+
+상세기능 유형
+
+상세기능명(국문)
+
+선박입출항신고조회
+
+상세기능 설명
+
+지정한 항구, 기간, 호출부호에 맞는 선박 입출항 신고정보를 조회하는 기능
+
+Call Back URL
+
+http://apis.data.go.kr/1192000/VsslEtrynd5/Info5
+
+최대 메시지 사이즈
+
+[12000] byte
+
+평균 응답 시간
+
+[3000] ms
+
+초당 최대 트랙잭션
+
+조회 (목록)
+
+[30] tps
+
+b) 요청 메시지 명세
+항목명(영문)
+
+항목명(국문)
+
+항목크기
+
+serviceKey
+
+인증키
+
+100
+
+prtAgCd
+
+항만청코드
+
+3
+
+항목구분
+1
+1
+
+샘플데이터
+
+항목설명
+
+인증키
+
+공공데이터포털에서
+
+(URL Encode)
+
+발급받은 인증키
+
+020
+
+검색하고자 하는
+항만청 코드
+
+sde
+
+검색 시작일
+
+8
+
+1
+
+20171227
+
+검색을 원하는 조회
+시작 날짜
+
+ede
+
+검색 종료일
+
+8
+
+1
+
+20171227
+
+검색을 원하는 조회
+종료 날짜
+
+deGb
+
+검색일구분
+
+1
+
+0
+
+I
+
+I : 입항일기준(기본값)
+O : 출항일기준
+
+clsgn
+
+호출부호
+
+10
+
+0
+
+C6UM3
+
+검색을 원하는 조회
+호출부호
+
+numOfRows
+
+한 페이지 결과
+
+4
+
+0
+
+10
+
+수
+pageNo
+
+페이지 번호
+
+조회 결과 데이터 최대
+개수(최대 50)
+
+4
+
+0
+
+1
+
+※ 항목구분 : 필수(1), 옵션(0), 1 건 이상 복수건(1..n), 0 건 또는 복수건(0..n)
+- 4 -
+
+페이지 번호
+
+Open API 활용가이드
+
+c) 응답 메시지 명세
+항목명(영문)
+
+항목명(국문)
+
+항목크
+
+항목구
+
+기
+
+분
+
+샘플데이터
+
+resultCode
+
+응답결과 코드
+
+2
+
+1
+
+resultMsg
+
+응답결과 메시지
+
+50
+
+1
+
+numOfRows
+
+한 페이지 결과 수
+
+4
+
+1
+
+1
+
+pageNo
+
+페이지 수
+
+4
+
+1
+
+2
+
+페이지 수
+
+totalCount
+
+데이터 총 개수
+
+4
+
+1
+
+3
+
+데이터 총 개수
+
+items
+
+00
+
+항목설명
+
+NORMAL_SERVIC
+E
+
+응답결과 코드
+응답결과 메시지
+한 페이지당 표출
+데이터 수
+
+1
+
+prtAgCd
+
+항구청코드
+
+3
+
+1
+
+020
+
+항구청코드
+
+prtAgNm
+
+항구청명
+
+10
+
+0
+
+부산
+
+항구청명
+
+etryptYear
+
+입항년도
+
+4
+
+0
+
+2017
+
+입항년도
+
+etryptCo
+
+입항횟수
+
+3
+
+0
+
+003
+
+입항횟수
+
+clsgn
+
+호출부호
+
+10
+
+1
+
+9VHZ8
+
+호출부호
+
+vsslNm
+
+선박명
+
+40
+
+0
+
+WAN HAI 261
+
+선박명
+
+vsslNltyCd
+
+선박국가코드
+
+2
+
+0
+
+SG
+
+선박국가코드
+
+vsslNltyNm
+
+선박국가명
+
+20
+
+0
+
+싱가포르
+
+선박국가명
+
+vsslKndCd
+
+선박종류코드
+
+2
+
+0
+
+41
+
+선박종류코드
+
+vsslKndNm
+
+선박종류명
+
+12
+
+0
+
+풀컨테이너선
+
+선박종류명
+
+etryptPurpsCd
+
+입항목적코드
+
+2
+
+0
+
+01
+
+입항목적코드
+
+etryptPurpsNm
+
+입항목적명
+
+5
+
+0
+
+양적하
+
+입항목적명
+
+5
+
+0
+
+TWTPE
+
+최초출항지항구명
+
+50
+
+0
+
+TAIPEI
+
+최초출항지항구명
+
+전출항지국가항구코드
+
+5
+
+0
+
+KRUSN
+
+전출항지국가항구코드
+
+prvsDpmprtPrtNm
+
+전출항지항구명
+
+50
+
+0
+
+울산
+
+전출항지항구명
+
+nxlnptNatPrtCd
+
+차항지국가항구코드
+
+5
+
+0
+
+TWTPE
+
+차항지국가항구코드
+
+nxlnptPrtNm
+
+차출항지항구명
+
+50
+
+0
+
+TAIPEI
+
+차출항지항구명
+
+dstnNatPrtCd
+
+목적지국가항구코드
+
+5
+
+0
+
+TWTPE
+
+목적지국가항구코드
+
+dstnPrtNm
+
+목적지항구명
+
+50
+
+0
+
+TAIPEI
+
+목적지항구명
+
+최종
+
+신청구분명
+
+frstDpmprtNatPrtCd
+frstDpmprtPrtNm
+prvsDpmprtNatPrtC
+d
+
+최초출항지국가항구코
+드
+
+details
+reqstSeNm
+
+최초출항지국가항구코
+드
+
+0
+신청구분명
+
+2
+
+- 5 -
+
+0
+
+Open API 활용가이드
+
+etryndNm
+
+입출항구분명
+
+2
+
+0
+
+입항
+
+입출항구분명
+
+2017-02etryptDt
+
+입항일시
+
+25
+
+0
+
+09T17:00:00+09:0
+
+입항일시-입항상세
+
+0
+2017-02tkoffDt
+
+출항일시
+
+25
+
+0
+
+09T17:00:00+09:0
+
+출항일시-출항상세
+
+0
+ibobprtNm
+
+내외항구분명
+
+2
+
+0
+
+외항
+
+내외항구분명
+
+laidupFcltyCd
+
+계선시설코드
+
+3
+
+0
+
+MBR
+
+계선시설코드
+
+laidupFcltySubCd
+
+계선시설서브코드
+
+2
+
+0
+
+E2
+
+계선시설서브코드
+
+laidupFcltyNm
+
+계선시설명
+
+20
+
+0
+
+tugYn
+
+예선유무
+
+1
+
+0
+
+Y
+
+예선유무
+
+piltgYn
+
+도선유무
+
+1
+
+0
+
+Y
+
+도선유무
+
+ldadngFrghtClCd
+
+화물명세
+
+2
+
+0
+
+99
+
+화물명세
+
+ldadngTon
+
+적재톤수
+
+20
+
+0
+
+863
+
+적재톤수
+
+trnpdtTon
+
+환적톤수
+
+20
+
+0
+
+6
+
+환적톤수
+
+landngFrghtTon
+
+양하화물톤
+
+20
+
+0
+
+857
+
+양하화물톤-입항상세
+
+ldFrghtTon
+
+적하화물톤
+
+20
+
+0
+
+3066
+
+적하화물톤-출항상세
+
+grtg
+
+총톤수
+
+20
+
+0
+
+18872
+
+총톤수
+
+intrlGrtg
+
+국제총톤수
+
+20
+
+0
+
+18872
+
+국제총톤수
+
+satmntEntrpsNm
+
+신고업체명
+
+40
+
+0
+
+만해항운한국(주)
+
+신고업체명
+
+crewCo
+
+선원수
+
+5
+
+0
+
+20
+
+선원수
+
+koranCrewCo
+
+한국인선원수
+
+4
+
+0
+
+0
+
+한국인선원수
+
+frgnrCrewCo
+
+외국인선원수
+
+4
+
+0
+
+20
+
+외국인선원수
+
+mrNum
+
+적하목록관리번호
+
+11
+
+0
+
+18ARASM501E
+
+적하목록관리번호
+
+tkoffPrrrnDt
+
+출항예정일시
+
+25
+
+0
+
+dstnEtryptDt
+
+목적지입항예정일시
+
+25
+
+0
+
+신감만부두
+2 선석
+
+2018-01-05
+23:00:00
+
+계선시설명
+
+출항예정일시-입항상세
+
+2018-01-07
+
+목적지입항예정일시-
+
+15:30:00
+
+출항상세
+
+※ 항목구분 : 필수(1), 옵션(0), 1 건 이상 복수건(1..n), 0 건 또는 복수건(0..n)
+d) 요청/응답 메시지 예제
+요청메시지
+http://apis.data.go.kr/1192000/VsslEtrynd5/Info5?serviceKey=인증키(URL Encode)
+&prtAgCd=020&sde=20171227&ede=20171227&deGb=I&clsgn=C6UM3&pageNo=1&numOfRows=10
+- 6 -
+
+Open API 활용가이드
+
+응답메시지
+<response>
+<header>
+<resultCode>00</resultCode>
+<resultMsg>NORMAL_SERVICE</resultMsg>
+</header>
+<body>
+<items>
+<item>
+<prtAgCd>020</prtAgCd>
+<prtAgNm>부산</prtAgNm>
+<etryptYear>2017</etryptYear>
+<etryptCo>010</etryptCo>
+<clsgn>C6UM3</clsgn>
+<vsslNm>PERUVIAN REEFER</vsslNm>
+<vsslNltyCd>BS</vsslNltyCd>
+<vsslNltyNm>바하마</vsslNltyNm>
+<vsslKndCd>21</vsslKndCd>
+<vsslKndNm>산물선(벌크선)</vsslKndNm>
+<etryptPurpsCd>03</etryptPurpsCd>
+<etryptPurpsNm>적하</etryptPurpsNm>
+<frstDpmprtNatPrtCd>USDUT</frstDpmprtNatPrtCd>
+<frstDpmprtPrtNm>DUTCHHARBOR</frstDpmprtPrtNm>
+<prvsDpmprtNatPrtCd>CNDLC</prvsDpmprtNatPrtCd>
+<prvsDpmprtPrtNm>DALIAN</prvsDpmprtPrtNm>
+<nxlnptNatPrtCd>USDUT</nxlnptNatPrtCd>
+<nxlnptPrtNm>DUTCHHARBOR</nxlnptPrtNm>
+<dstnNatPrtCd>USDUT</dstnNatPrtCd>
+<dstnPrtNm>DUTCHHARBOR</dstnPrtNm>
+<details>
+<detail>
+<reqstSeNm>최종</reqstSeNm>
+<etryndNm>입항</etryndNm>
+<etryptDt>2017-12-27T01:00:00+09:00</etryptDt>
+<ibobprtNm>외항</ibobprtNm>
+<laidupFcltyCd>WAN</laidupFcltyCd>
+<laidupFcltySubCd>03</laidupFcltySubCd>
+<laidupFcltyNm>남외항 N-3 박지</laidupFcltyNm>
+<tugYn>N</tugYn>
+<piltgYn>N</piltgYn>
+<ldadngFrghtClCd>-</ldadngFrghtClCd>
+<ldadngTon>0</ldadngTon>
+<trnpdtTon>0</trnpdtTon>
+<landngFrghtTon>0</landngFrghtTon>
+<grtg>7944</grtg>
+<intrlGrtg>7944</intrlGrtg>
+<satmntEntrpsNm>에이알에이로지스틱스(주)</satmntEntrpsNm>
+<crewCo>22</crewCo>
+<koranCrewCo>0</koranCrewCo>
+<frgnrCrewCo>22</frgnrCrewCo>
+<mrNum>17ARAS0032I</mrNum>
+<tkoffPrrrnDt>2018-01-05 23:00:00</tkoffPrrrnDt>
+</detail>
+<detail>
+<reqstSeNm>최종</reqstSeNm>
+- 7 -
+
+Open API 활용가이드
+
+<etryndNm>출항</etryndNm>
+<tkoffDt>2018-01-05T19:00:00+09:00</tkoffDt>
+<ibobprtNm>외항</ibobprtNm>
+<laidupFcltyCd>MK6</laidupFcltyCd>
+<laidupFcltySubCd>03</laidupFcltySubCd>
+<laidupFcltyNm>감천 6 부두 3 선석</laidupFcltyNm>
+<tugYn>N</tugYn>
+<piltgYn>N</piltgYn>
+<ldadngFrghtClCd>99</ldadngFrghtClCd>
+<ldadngTon>1273.8</ldadngTon>
+<trnpdtTon>141.1</trnpdtTon>
+<ldFrghtTon>1273.8</ldFrghtTon>
+<grtg>7944</grtg>
+<intrlGrtg>7944</intrlGrtg>
+<satmntEntrpsNm>에이알에이로지스틱스(주)</satmntEntrpsNm>
+<crewCo>20</crewCo>
+<koranCrewCo>0</koranCrewCo>
+<frgnrCrewCo>20</frgnrCrewCo>
+<mrNum>18ARASM501E</mrNum>
+<dstnEtryptDt>2018-01-07 15:30:00</dstnEtryptDt>
+</detail>
+</details>
+</item>
+</items>
+<numOfRows>1</numOfRows>
+<pageNo>1</pageNo>
+<totalCount>1</totalCount>
+</body>
+</response>
+
+2.
+
+OpenAPI 에러 코드정리
+
+에러코드
+
+에러메시지
+
+설명
+
+01
+
+APPLICATION_ERROR
+
+어플리케이션 에러
+
+10
+
+INVALID_SERVICE_KEY_ERROR
+
+유효하지 않은 서비스키 에러
+
+11
+
+INVALID_REQUEST_PARAMETER_ERROR
+
+잘못된 요청 파라메터 에러
+
+12
+
+NO_OPENAPI_SERVICE_ERROR
+
+해당 오픈 API 서비스가 없거나 폐기됨
+
+20
+
+SERVICE_ACCESS_DENIED_ERROR
+
+서비스 접근거부
+
+22
+
+LIMITED_NUMBER_OF_SERVICE_REQUESTS_E
+
+서비스 요청제한횟수 초과에러
+
+XCEEDS_ERROR
+30
+
+SERVICE_KEY_IS_NOT_REGISTERED_ERROR
+
+등록되지 않은 서비스키
+
+31
+
+DEADLINE_HAS_EXPIRED_ERROR
+
+기한만료된 서비스키
+
+32
+
+UNREGISTERED_IP_ERROR
+
+등록되지 않은 IP
+
+99
+
+UNKNOWN_ERROR
+
+기타에러
+
+- 8 -
+
+

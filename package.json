@@ -12,8 +12,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "echarts": "^5.5.1",
     "echarts-for-react": "^3.0.2",
+    "fast-xml-parser": "^5.11.2",
+    "js-sha256": "^1.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.446.0",
     "react": "^18.3.1",

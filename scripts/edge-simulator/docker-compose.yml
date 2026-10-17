@@ -1,0 +1,13 @@
+services:
+  edge-daemon:
+    build: .
+    container_name: marine-edge-daemon
+    restart: unless-stopped
+    ports:
+      - "80:8000"
+      - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M

@@ -10,6 +10,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/edge': {
+        target: 'http://34.133.74.29',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/edge/, ''),
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
