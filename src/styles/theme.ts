@@ -24,19 +24,31 @@ export const MarineTheme = {
     textMuted: '#64748B',       // 비활성 텍스트
   },
 
-  // IMO MARPOL Annex VI & BWM D-2 선급 공식 규제 임계치
+  // IMO MARPOL Annex VI, BWM D-2, MEPC.340(77) 선급 공식 규제 임계치
   thresholds: {
+    // 1. Scrubber (MARPOL VI MEPC.340(77))
     soxGlobalPpm: 21.7,         // 일반 해역 황산화물 허용 한계
     soxEcaPpm: 4.3,             // 배출규제해역(ECA) 황산화물 허용 한계
-    washwaterPhMin: 6.5,        // 선외 배출 세정수 최소 허용 pH
-    washwaterPhCritical: 4.0,   // 긴급 차단 pH
-    turbidityMaxNtu: 25.0,      // 세정수 최대 허용 탁도 (NTU)
-    pahMaxPpb: 50.0,            // 최대 허용 PAH 농도 (ppb)
+    so2Co2RatioEca: 4.3,        // ECA SO2/CO2 비율 규제치
+    so2Co2RatioGlobal: 21.7,    // Global SO2/CO2 비율 규제치
+    cemsDriftMaxPct: 2.0,       // CEMS 24h 영점/스팬 최대 허용 드리프트율 (%)
     
+    washwaterPhMin: 6.5,        // 선외 배출 세정수 최소 허용 pH (해양 산성화 방지)
+    washwaterPhCritical: 4.0,   // 긴급 차단(Trip) pH
+    turbidityMaxNtu: 25.0,      // 세정수 최대 허용 탁도 상승폭 (NTU)
+    pahMaxPpb: 50.0,            // 최대 허용 PAH 농도 (ppb)
+    washwaterTempMaxRiseC: 60.0,// 최대 허용 온도 상승폭 (°C)
+    
+    // 2. BWTS (BWM Reg. D-2)
     filterDpBackwashBar: 1.0,   // 평형수 여과기 자동 역세척 개시 차압
     filterDpAlarmBar: 1.5,      // 평형수 여과기 막힘 경보 차압
-    uvIntensityMinWm2: 250.0,   // 최소 살균 유효 UV 조사 강도
-    troMaxPpm: 0.1,             // 배출 평형수 최대 잔류산화제 농도
-    complianceRateTargetPct: 99.5, // 선급 요구 당월 환경 준수율 목표
+    uvIntensityMinWm2: 250.0,   // 최소 살균 유효 UV 조사 강도 (W/m²)
+    uvChamberTempMaxC: 65.0,    // UV 챔버 과열 셧다운 온도 (°C)
+    uvLampMaxHours: 2000,       // UV 램프 교체 권고 누적 가동시간
+    troMaxPpm: 0.1,             // 배출 평형수 최대 잔류산화제 농도 (ppm)
+    
+    // 3. Compliance & Audit Target
+    complianceRateTargetPct: 99.5, // 선급 요구 당월 환경 준수율 목표 (%)
+    edgeBufferMinDays: 7,          // 선급 IACS UR E26/E27 최소 로컬 버퍼 일수
   },
 } as const;

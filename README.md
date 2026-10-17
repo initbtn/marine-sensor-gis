@@ -148,6 +148,7 @@ npm run build
 - **기획 정본 명세서**: [`docs/project-planning.md`](./docs/project-planning.md)
 - **선급 및 IMO 표준 인증 가이드**: [`docs/domain/maritime-class-standards.md`](./docs/domain/maritime-class-standards.md)
 - **실무자 도메인 UX 규율 가이드**: [`docs/domain/maritime-ux-rules.md`](./docs/domain/maritime-ux-rules.md)
+- **데이터 시각화 매트릭스 명세서**: [`docs/spec/data-visualization-matrix.md`](./docs/spec/data-visualization-matrix.md)
 - **프론트엔드 스토리보드 및 스펙**: [`docs/front-spec.md`](./docs/front-spec.md)
 - **PRD 및 IA 아키텍처 명세서**: [`docs/antigravity-prd-ia-spec.md`](./docs/antigravity-prd-ia-spec.md)
 - **GitHub Projects v2 보드**: [Marine Sensor GIS Project Board (#2)](https://github.com/users/initbtn/projects/2)
