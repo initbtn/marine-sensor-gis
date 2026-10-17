@@ -20,19 +20,26 @@ export interface TelegramCredentials {
   chatId: string;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 export function formatTelegramAlertMessage(payload: TelegramAlertPayload): string {
-  const env = payload.environment || 'PROD';
-  const time = payload.timestamp || new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+  const env = escapeHtml(payload.environment || 'PROD');
+  const time = escapeHtml(payload.timestamp || new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
   const icon = payload.level === 'CRITICAL' ? '🚨' : payload.level === 'WARNING' ? '⚠️' : 'ℹ️';
 
   let text = `${icon} [marine-sensor-gis] [${payload.level}] (${env})\n`;
   text += `━━━━━━━━━━━━━━━━━━━━\n`;
   text += `• 프로젝트: marine-sensor-gis (선박 친환경 설비 GIS 관제)\n`;
-  text += `• 감지 영역: ${payload.area}\n`;
+  text += `• 감지 영역: ${escapeHtml(payload.area)}\n`;
   text += `• 발생 시각: ${time}\n`;
-  text += `• 상세 내용: ${payload.message}\n`;
+  text += `• 상세 내용: ${escapeHtml(payload.message)}\n`;
   if (payload.details) {
-    text += `• 부가 정보: ${payload.details}\n`;
+    text += `• 부가 정보: ${escapeHtml(payload.details)}\n`;
   }
   text += `━━━━━━━━━━━━━━━━━━━━`;
 

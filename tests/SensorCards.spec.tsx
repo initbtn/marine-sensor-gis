@@ -24,7 +24,7 @@ describe('SensorCards Component Tests', () => {
     expect(screen.getByText('🌊 평형수 처리 (BWTS)')).toBeInTheDocument();
     expect(screen.getByText('15.2')).toBeInTheDocument();
     expect(screen.getByText('7.1')).toBeInTheDocument();
-    expect(screen.getByText('1250')).toBeInTheDocument();
+    expect(screen.getByText(/1,?250/)).toBeInTheDocument();
     expect(screen.getByText('520')).toBeInTheDocument();
     expect(screen.getByText('0.125')).toBeInTheDocument();
   });

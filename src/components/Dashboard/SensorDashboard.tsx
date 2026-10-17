@@ -4,6 +4,7 @@ import {
   ScrubberTelemetry,
   BWTSTelemetry,
   AlarmEvent,
+  UserRole,
 } from '../../types/telemetry';
 import {
   INITIAL_VESSELS,
@@ -14,8 +15,12 @@ import {
 } from '../../services/mockTelemetry';
 import { dualDbSyncEngine } from '../../services/dualDbSyncEngine';
 import { sendTelegramAlert } from '../../services/telegramAlertService';
+import { useTelemetryStream } from '../../hooks/useTelemetryStream';
+import { MarineTheme } from '../../styles/theme';
 import { MarineMap } from '../Map/MarineMap';
 import { TelemetryChart } from '../Chart/TelemetryChart';
+import { GaugeChart } from '../Chart/GaugeChart';
+import { RoleSwitcher } from '../Common/RoleSwitcher';
 import { SensorCards } from './SensorCards';
 import { AlarmList } from './AlarmList';
 import {
@@ -24,12 +29,14 @@ import {
   NetworkStatus,
   SyncState,
 } from './ModeToggleBar';
+import { ShieldAlert } from 'lucide-react';
 
 export const SensorDashboard: React.FC = () => {
   const [vessels, setVessels] = useState<VesselInfo[]>(INITIAL_VESSELS);
   const [selectedVesselId, setSelectedVesselId] = useState<string>('VSL-001');
   const [facilityTab, setFacilityTab] = useState<'SCRUBBER' | 'BWTS'>('SCRUBBER');
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
+  const [currentRole, setCurrentRole] = useState<UserRole>('CHIEF_ENGINEER');
 
   // 2원화 관제 모드 및 위성 네트워크 / 동기화 상태
   const [operatingMode, setOperatingMode] = useState<OperatingMode>('EDGE');
@@ -38,6 +45,12 @@ export const SensorDashboard: React.FC = () => {
   const [pendingCount, setPendingCount] = useState<number>(() =>
     dualDbSyncEngine.getQueueLength()
   );
+
+  // 실시간 10Hz GCP 선박 엣지 데몬 스트림 및 다운링크 제어 연동
+  const edgeStream = useTelemetryStream({
+    autoPoll: isStreaming && networkStatus === 'ONLINE',
+    pollIntervalMs: 2000,
+  });
 
   // 선택된 선박의 텔레메트리 상태 및 이력
   const [currentScrubber, setCurrentScrubber] = useState<ScrubberTelemetry>(() =>
@@ -87,19 +100,17 @@ export const SensorDashboard: React.FC = () => {
     }
   }, [networkStatus, syncStatus]);
 
-  // 네트워크 상태 토글 핸들러
-  const handleToggleNetwork = useCallback(() => {
-    setNetworkStatus((prev) => {
-      const next = prev === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-      if (next === 'ONLINE') {
-        // 온라인 복구 시 자동 백그라운드 동기화 트리거
-        dualDbSyncEngine.flushSyncQueue().then(() => {
-          setPendingCount(dualDbSyncEngine.getQueueLength());
-        });
-      }
-      return next;
-    });
-  }, []);
+  // 네트워크 상태 토글 핸들러 (오프라인 큐 버그 패치)
+  const handleToggleNetwork = useCallback(async () => {
+    const next = networkStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+    setNetworkStatus(next);
+    await dualDbSyncEngine.setSatelliteLink(next === 'ONLINE');
+    if (next === 'ONLINE') {
+      // 온라인 복구 시 자동 백그라운드 동기화 트리거
+      await dualDbSyncEngine.flushSyncQueue();
+      setPendingCount(dualDbSyncEngine.getQueueLength());
+    }
+  }, [networkStatus]);
 
   // 실시간 텔레메트리 갱신 루프 (2초 주기)
   useEffect(() => {
@@ -131,9 +142,27 @@ export const SensorDashboard: React.FC = () => {
         };
       });
 
-      // 3. 센서 데이터 갱신
-      const newScrubber = generateScrubberTelemetry();
-      const newBWTS = generateBWTSTelemetry();
+      // 3. 센서 데이터 갱신 (GCP 엣지 데몬 라이브 데이터 우선 바인딩)
+      let newScrubber: ScrubberTelemetry;
+      let newBWTS: BWTSTelemetry;
+
+      if (edgeStream.telemetry && networkStatus === 'ONLINE' && selectedVesselId === 'VSL-001') {
+        const live = edgeStream.telemetry;
+        newScrubber = generateScrubberTelemetry({
+          soxPpm: Number((live.scrubber_so2_co2_ratio * 4.2).toFixed(2)),
+          phDischarge: live.scrubber_ph,
+          turbidityFtu: live.scrubber_turbidity,
+          pressureDropKpa: Number((live.scrubber_dp * 10).toFixed(1)),
+        });
+        newBWTS = generateBWTSTelemetry({
+          filterPressureKpa: Number((live.bwts_filter_dp * 100).toFixed(1)),
+          troPpm: live.bwts_tro,
+        });
+      } else {
+        newScrubber = generateScrubberTelemetry();
+        newBWTS = generateBWTSTelemetry();
+      }
+
       setCurrentScrubber(newScrubber);
       setCurrentBWTS(newBWTS);
 
@@ -179,7 +208,7 @@ export const SensorDashboard: React.FC = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isStreaming, selectedVesselId, selectedVessel, networkStatus]);
+  }, [isStreaming, selectedVesselId, selectedVessel, networkStatus, edgeStream.telemetry]);
 
   const handleAcknowledgeAlarm = (alarmId: string) => {
     setAlarms((prev) =>
@@ -194,37 +223,67 @@ export const SensorDashboard: React.FC = () => {
         margin: '0 auto',
         padding: '20px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#f8fafc',
+        color: MarineTheme.colors.textPrimary,
+        background: MarineTheme.colors.bgPrimary,
       }}
     >
-      {/* Header */}
+      {/* 1. Header with Role Switcher */}
       <header
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
           marginBottom: '16px',
-          borderBottom: '2px solid #334155',
+          borderBottom: `2px solid ${MarineTheme.colors.border}`,
           paddingBottom: '16px',
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: '#f8fafc' }}>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: MarineTheme.colors.textPrimary }}>
             🌊 해양 친환경 설비 실시간 센서 모니터링 &amp; GIS 관제 웹 플랫폼
           </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: MarineTheme.colors.textSecondary }}>
             IMO 탈황 규제(MARPOL Annex VI) &amp; 선박평형수(BWTS D-2) 실시간 텔레메트리 관제 시스템
           </p>
         </div>
+
+        {/* 4대 직무 역할 전환기 */}
+        <RoleSwitcher currentRole={currentRole} onRoleChange={setCurrentRole} />
+
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* 다운링크 원격 바이패스 제어 버튼 */}
+          <button
+            type="button"
+            onClick={() => edgeStream.toggleBypass()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '6px',
+              border: `1px solid ${MarineTheme.colors.criticalCrimson}`,
+              background: 'rgba(231, 29, 54, 0.15)',
+              color: MarineTheme.colors.criticalCrimson,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+          >
+            <ShieldAlert size={14} />
+            비상 바이패스 (Bypass)
+          </button>
+
+          {/* 스트리밍 일시정지/재개 */}
           <button
             onClick={() => setIsStreaming(!isStreaming)}
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
               border: 'none',
-              background: isStreaming ? '#ef4444' : '#10b981',
-              color: '#ffffff',
+              background: isStreaming ? MarineTheme.colors.criticalCrimson : MarineTheme.colors.ecoCyan,
+              color: isStreaming ? '#ffffff' : '#000000',
               fontWeight: 'bold',
               cursor: 'pointer',
               fontSize: '13px',
@@ -235,7 +294,7 @@ export const SensorDashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* 2원화 HMI 관제 모드 및 위성 네트워크 / 동기화 바 */}
+      {/* 2. 2원화 HMI 관제 모드 및 위성 네트워크 / 동기화 바 */}
       <ModeToggleBar
         operatingMode={operatingMode}
         networkStatus={networkStatus}
@@ -246,7 +305,7 @@ export const SensorDashboard: React.FC = () => {
         onManualFlush={handleManualFlush}
       />
 
-      {/* Vessel Selector Strip */}
+      {/* 3. Vessel Selector Strip */}
       <div
         style={{
           display: 'flex',
@@ -267,13 +326,13 @@ export const SensorDashboard: React.FC = () => {
                 padding: '12px 16px',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                border: isSelected ? '2px solid #0284c7' : '1px solid #334155',
-                background: isSelected ? '#1e293b' : '#0f172a',
-                boxShadow: isSelected ? '0 2px 4px rgba(2, 132, 199, 0.25)' : 'none',
+                border: isSelected ? `2px solid ${MarineTheme.colors.ecoCyan}` : `1px solid ${MarineTheme.colors.border}`,
+                background: isSelected ? MarineTheme.colors.bgSecondary : MarineTheme.colors.bgCard,
+                boxShadow: isSelected ? '0 2px 8px rgba(0, 245, 212, 0.2)' : 'none',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '14px', color: '#f8fafc' }}>{vessel.name}</strong>
+                <strong style={{ fontSize: '14px', color: MarineTheme.colors.textPrimary }}>{vessel.name}</strong>
                 <span
                   style={{
                     fontSize: '11px',
@@ -282,29 +341,29 @@ export const SensorDashboard: React.FC = () => {
                     borderRadius: '4px',
                     background:
                       vessel.status === 'CRITICAL'
-                        ? 'rgba(239, 68, 68, 0.2)'
+                        ? 'rgba(231, 29, 54, 0.2)'
                         : vessel.status === 'WARNING'
-                        ? 'rgba(234, 179, 8, 0.2)'
-                        : 'rgba(34, 197, 94, 0.2)',
+                        ? 'rgba(255, 159, 28, 0.2)'
+                        : 'rgba(0, 245, 212, 0.2)',
                     color:
                       vessel.status === 'CRITICAL'
-                        ? '#f87171'
+                        ? MarineTheme.colors.criticalCrimson
                         : vessel.status === 'WARNING'
-                        ? '#facc15'
-                        : '#4ade80',
+                        ? MarineTheme.colors.warningAmber
+                        : MarineTheme.colors.ecoCyan,
                     border: `1px solid ${
                       vessel.status === 'CRITICAL'
-                        ? 'rgba(239, 68, 68, 0.4)'
+                        ? MarineTheme.colors.criticalCrimson
                         : vessel.status === 'WARNING'
-                        ? 'rgba(234, 179, 8, 0.4)'
-                        : 'rgba(34, 197, 94, 0.4)'
+                        ? MarineTheme.colors.warningAmber
+                        : MarineTheme.colors.ecoCyan
                     }`,
                   }}
                 >
                   {vessel.status}
                 </span>
               </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', color: MarineTheme.colors.textSecondary, marginTop: '4px' }}>
                 IMO {vessel.imoNumber} | {vessel.destination}
               </div>
             </div>
@@ -312,16 +371,16 @@ export const SensorDashboard: React.FC = () => {
         })}
       </div>
 
-      {/* Main Grid: GIS Map (Left) & Sensor Details (Right) */}
+      {/* 4. Main Grid: GIS Map (Left) & Sensor Details with Gauges (Right) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
         {/* Left Column: GIS Map */}
         <div
           style={{
-            background: '#0f172a',
-            borderRadius: '8px',
+            background: MarineTheme.colors.bgCard,
+            borderRadius: '12px',
             padding: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-            border: '1px solid #334155',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            border: `1px solid ${MarineTheme.colors.border}`,
           }}
         >
           <div
@@ -332,10 +391,10 @@ export const SensorDashboard: React.FC = () => {
               marginBottom: '12px',
             }}
           >
-            <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: MarineTheme.colors.textPrimary }}>
               🗺️ 해양 GIS 선박 위치 및 항적 관제
             </h3>
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+            <span style={{ fontSize: '12px', color: MarineTheme.colors.textSecondary }}>
               선박 위치: {selectedVessel.position.lat.toFixed(4)}°N,{' '}
               {selectedVessel.position.lng.toFixed(4)}°E
             </span>
@@ -348,7 +407,7 @@ export const SensorDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Right Column: Sensor Monitoring & Charts */}
+        {/* Right Column: Sensor Monitoring & Gauges */}
         <div>
           {/* Facility Tab Buttons */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -359,8 +418,8 @@ export const SensorDashboard: React.FC = () => {
                 padding: '10px',
                 borderRadius: '6px',
                 border: 'none',
-                background: facilityTab === 'SCRUBBER' ? '#0284c7' : '#1e293b',
-                color: facilityTab === 'SCRUBBER' ? '#ffffff' : '#94a3b8',
+                background: facilityTab === 'SCRUBBER' ? MarineTheme.colors.ecoCyan : MarineTheme.colors.bgCard,
+                color: facilityTab === 'SCRUBBER' ? '#000000' : MarineTheme.colors.textSecondary,
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '13px',
@@ -375,8 +434,8 @@ export const SensorDashboard: React.FC = () => {
                 padding: '10px',
                 borderRadius: '6px',
                 border: 'none',
-                background: facilityTab === 'BWTS' ? '#0d9488' : '#1e293b',
-                color: facilityTab === 'BWTS' ? '#ffffff' : '#94a3b8',
+                background: facilityTab === 'BWTS' ? MarineTheme.colors.ecoCyan : MarineTheme.colors.bgCard,
+                color: facilityTab === 'BWTS' ? '#000000' : MarineTheme.colors.textSecondary,
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '13px',
@@ -386,17 +445,52 @@ export const SensorDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Sensor Summary Cards */}
+          {/* 선급 규제 게이지 차트 (GaugeChart) */}
+          <div
+            style={{
+              background: MarineTheme.colors.bgCard,
+              borderRadius: '12px',
+              padding: '16px',
+              border: `1px solid ${MarineTheme.colors.border}`,
+              marginBottom: '16px',
+            }}
+          >
+            {facilityTab === 'SCRUBBER' ? (
+              <GaugeChart
+                title="SOx 배출 농도 게이지 (IMO Annex VI)"
+                value={currentScrubber.soxPpm}
+                unit="ppm"
+                type="SOX"
+                thresholdValue={MarineTheme.thresholds.soxGlobalPpm}
+                thresholdLabel="Global 한도 21.7 ppm"
+                height="220px"
+              />
+            ) : (
+              <GaugeChart
+                title="BWTS 잔류 산화물질 농도 (IMO D-2)"
+                value={currentBWTS.troPpm}
+                unit="ppm"
+                type="GENERIC"
+                min={0}
+                max={0.5}
+                thresholdValue={MarineTheme.thresholds.troMaxPpm}
+                thresholdLabel="허용 한도 0.1 ppm"
+                height="220px"
+              />
+            )}
+          </div>
+
+          {/* MetricCard 기반 디자인 시스템 센서 카드 그리드 */}
           <SensorCards scrubber={currentScrubber} bwts={currentBWTS} />
 
           {/* ECharts Telemetry Chart */}
           <div
             style={{
-              background: '#0f172a',
-              borderRadius: '8px',
+              background: MarineTheme.colors.bgCard,
+              borderRadius: '12px',
               padding: '16px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              border: '1px solid #334155',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+              border: `1px solid ${MarineTheme.colors.border}`,
               marginTop: '16px',
             }}
           >
@@ -405,7 +499,7 @@ export const SensorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Full Width Alarm Log */}
+      {/* 5. Full Width Alarm Log */}
       <AlarmList alarms={alarms} onAcknowledge={handleAcknowledgeAlarm} />
     </div>
   );

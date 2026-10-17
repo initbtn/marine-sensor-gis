@@ -184,7 +184,7 @@ export const ModeToggleBar: React.FC<ModeToggleBarProps> = ({
             opacity: syncStatus === 'SYNCING' || networkStatus === 'OFFLINE' ? 0.6 : 1,
           }}
         >
-          <RefreshCw size={13} className={syncStatus === 'SYNCING' ? 'spin' : ''} />
+          <RefreshCw size={13} />
           {syncStatus === 'SYNCING' ? '동기화 중...' : '즉시 동기화 (Flush)'}
         </button>
       </div>
