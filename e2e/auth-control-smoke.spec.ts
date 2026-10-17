@@ -11,19 +11,18 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
   test.beforeEach(async ({ page, context }) => {
-    // 1. 수동 인증 및 결제 활성화 세션 모의 주입 (Manual Auth & Payment State Injection)
+    // 1. 수동 인증 및 결제 활성화 세션 모의 주입 (Dynamic baseURL-aware Injection)
+    const targetUrl = test.info().project.use.baseURL || 'http://localhost:5173';
     await context.addCookies([
       {
         name: 'marine_session_token',
         value: 'mock_operator_valid_session_token',
-        domain: 'localhost',
-        path: '/',
+        url: targetUrl,
       },
       {
         name: 'marine_license_tier',
         value: 'ENTERPRISE_PAID_ACTIVE',
-        domain: 'localhost',
-        path: '/',
+        url: targetUrl,
       },
     ]);
 
@@ -49,8 +48,7 @@ test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
 
     // 3. Leaflet GIS 지도 컨테이너 존재 검증
     const mapContainer = page.locator('.leaflet-container, [data-testid="marine-gis-map"], #map');
-    // GIS 지도가 렌더링되거나 메인 콘텐츠 영역이 정상 마운트되었는지 확인
-    expect(await dashboardRoot.count()).toBeGreaterThan(0);
+    expect(await mapContainer.count()).toBeGreaterThan(0);
   });
 
   test('치명적 콘솔 런타임 에러(Uncaught Exception) 없이 부트스트랩되어야 한다', async ({ page }) => {
