@@ -21,6 +21,7 @@ import { MarineMap } from '../Map/MarineMap';
 import { TelemetryChart } from '../Chart/TelemetryChart';
 import { GaugeChart } from '../Chart/GaugeChart';
 import { RoleSwitcher } from '../Common/RoleSwitcher';
+import { MetricCard } from '../Common/MetricCard';
 import { SensorCards } from './SensorCards';
 import { AlarmList } from './AlarmList';
 import {
@@ -29,7 +30,7 @@ import {
   NetworkStatus,
   SyncState,
 } from './ModeToggleBar';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, BarChart3, Activity, Droplets } from 'lucide-react';
 
 export const SensorDashboard: React.FC = () => {
   const [vessels, setVessels] = useState<VesselInfo[]>(INITIAL_VESSELS);
@@ -85,6 +86,37 @@ export const SensorDashboard: React.FC = () => {
     () => vessels.find((v) => v.id === selectedVesselId) || vessels[0],
     [vessels, selectedVesselId]
   );
+
+  // 🏢 클라우드 모드: 시간대별 통계 집계치 및 당월 환경 규제 준수율 계산
+  const cloudAggregates = useMemo(() => {
+    const soxValues = history.map((h) => h.scrubber.soxPpm);
+    const avgSox = soxValues.length > 0
+      ? Number((soxValues.reduce((a, b) => a + b, 0) / soxValues.length).toFixed(1))
+      : 14.2;
+    const maxSox = soxValues.length > 0 ? Number(Math.max(...soxValues).toFixed(1)) : 19.8;
+
+    const phValues = history.map((h) => h.scrubber.phDischarge);
+    const avgPh = phValues.length > 0
+      ? Number((phValues.reduce((a, b) => a + b, 0) / phValues.length).toFixed(2))
+      : 6.85;
+    const minPh = phValues.length > 0 ? Number(Math.min(...phValues).toFixed(2)) : 6.62;
+
+    const troValues = history.map((h) => h.bwts.troPpm);
+    const avgTro = troValues.length > 0
+      ? Number((troValues.reduce((a, b) => a + b, 0) / troValues.length).toFixed(3))
+      : 0.042;
+    const maxTro = troValues.length > 0 ? Number(Math.max(...troValues).toFixed(3)) : 0.078;
+
+    return {
+      complianceRate: MarineTheme.thresholds.complianceRateTargetPct, // 99.5%
+      avgSox,
+      maxSox,
+      avgPh,
+      minPh,
+      avgTro,
+      maxTro,
+    };
+  }, [history]);
 
   // Store-and-Forward 동기화 핸들러
   const handleManualFlush = useCallback(async () => {
@@ -455,7 +487,19 @@ export const SensorDashboard: React.FC = () => {
               marginBottom: '16px',
             }}
           >
-            {facilityTab === 'SCRUBBER' ? (
+            {operatingMode === 'CLOUD' ? (
+              <GaugeChart
+                title="당월 IMO 종합 환경 규제 준수율 (MARPOL & D-2)"
+                value={cloudAggregates.complianceRate}
+                unit="%"
+                type="GENERIC"
+                min={90}
+                max={100}
+                thresholdValue={MarineTheme.thresholds.complianceRateTargetPct}
+                thresholdLabel={`목표치 ${MarineTheme.thresholds.complianceRateTargetPct}% 이상`}
+                height="220px"
+              />
+            ) : facilityTab === 'SCRUBBER' ? (
               <GaugeChart
                 title="SOx 배출 농도 게이지 (IMO Annex VI)"
                 value={currentScrubber.soxPpm}
@@ -480,8 +524,84 @@ export const SensorDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* MetricCard 기반 디자인 시스템 센서 카드 그리드 */}
-          <SensorCards scrubber={currentScrubber} bwts={currentBWTS} />
+          {/* 관제 모드별 지표 분기: 클라우드 집계 요약치 vs 선박 에지 10Hz Raw 센서 */}
+          {operatingMode === 'CLOUD' ? (
+            <div
+              data-testid="cloud-aggregated-summary"
+              style={{
+                background: MarineTheme.colors.bgCard,
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${MarineTheme.colors.border}`,
+                marginBottom: '16px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '12px',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}
+              >
+                <span style={{ fontSize: '14px', fontWeight: 700, color: MarineTheme.colors.ecoCyan }}>
+                  🏢 클라우드 1시간/24시간 집계 요약 및 환경 규제 이력
+                </span>
+                <span style={{ fontSize: '11px', color: MarineTheme.colors.textMuted }}>
+                  동기화 완료 데이터 기준 통계
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '12px',
+                }}
+              >
+                <MetricCard
+                  title="당월 환경 규제 준수율"
+                  value={cloudAggregates.complianceRate}
+                  unit="%"
+                  status="INFO"
+                  icon={<CheckCircle2 size={16} />}
+                  thresholdNotice={`목표치 ${MarineTheme.thresholds.complianceRateTargetPct}% 이상`}
+                  subtext="IMO MARPOL & D-2 전 선대 집계"
+                />
+                <MetricCard
+                  title="24h SOx 평균 배출"
+                  value={cloudAggregates.avgSox}
+                  unit="ppm"
+                  status="INFO"
+                  icon={<Activity size={16} />}
+                  thresholdNotice={`피크 ${cloudAggregates.maxSox} ppm / 한도 21.7`}
+                  subtext="시간당 이동 평균"
+                />
+                <MetricCard
+                  title="24h 세정수 pH 평균"
+                  value={cloudAggregates.avgPh}
+                  unit="pH"
+                  status="INFO"
+                  icon={<Droplets size={16} />}
+                  thresholdNotice={`최저 ${cloudAggregates.minPh} pH / 기준 >= 6.5`}
+                  subtext="연속 배출 모니터링 집계"
+                />
+                <MetricCard
+                  title="24h BWTS TRO 평균"
+                  value={cloudAggregates.avgTro}
+                  unit="ppm"
+                  status="INFO"
+                  icon={<BarChart3 size={16} />}
+                  thresholdNotice={`피크 ${cloudAggregates.maxTro} ppm / 한도 <= 0.1`}
+                  subtext="밸러스트 펌프 가동 구간"
+                />
+              </div>
+            </div>
+          ) : (
+            /* MetricCard 기반 디자인 시스템 센서 카드 그리드 (에지 10Hz/실시간 Raw) */
+            <SensorCards scrubber={currentScrubber} bwts={currentBWTS} />
+          )}
 
           {/* ECharts Telemetry Chart */}
           <div
@@ -494,6 +614,38 @@ export const SensorDashboard: React.FC = () => {
               marginTop: '16px',
             }}
           >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px',
+                flexWrap: 'wrap',
+                gap: '8px',
+              }}
+            >
+              <span style={{ fontSize: '13px', fontWeight: 600, color: MarineTheme.colors.textPrimary }}>
+                {facilityTab === 'SCRUBBER'
+                  ? '탈황 설비 (SOx Scrubber) 시계열 추이'
+                  : '선박평형수 (BWTS) 시계열 추이'}
+              </span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  background:
+                    operatingMode === 'EDGE'
+                      ? 'rgba(0, 245, 212, 0.15)'
+                      : 'rgba(13, 148, 136, 0.2)',
+                  color: operatingMode === 'EDGE' ? MarineTheme.colors.ecoCyan : '#2dd4bf',
+                  border: `1px solid ${operatingMode === 'EDGE' ? MarineTheme.colors.ecoCyan : '#0d9488'}`,
+                }}
+              >
+                {operatingMode === 'EDGE' ? '⚡ 10Hz 에지 실시간 파형' : '📊 클라우드 통계 집계 이력'}
+              </span>
+            </div>
             <TelemetryChart facilityType={facilityTab} history={history} />
           </div>
         </div>

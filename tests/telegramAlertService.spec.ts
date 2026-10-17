@@ -102,4 +102,22 @@ describe('telegramAlertService', () => {
     expect(result.error).toBe('Telegram credentials not configured');
     expect(mockFetch).not.toHaveBeenCalled();
   });
+
+  it('HTML 특수문자(<, >, &)가 포함된 페이로드를 안전하게 이스케이프해야 한다', () => {
+    const payload: TelegramAlertPayload = {
+      level: 'WARNING',
+      area: '<script>alert("xss")</script>',
+      message: 'SOx & NOx 농도 > 25.0 ppm <긴급>',
+      details: 'param & test <val> & result',
+      environment: 'DEV<TEST>',
+    };
+
+    const formatted = formatTelegramAlertMessage(payload);
+
+    expect(formatted).not.toContain('<script>');
+    expect(formatted).toContain('&lt;script&gt;alert("xss")&lt;/script&gt;');
+    expect(formatted).toContain('SOx &amp; NOx 농도 &gt; 25.0 ppm &lt;긴급&gt;');
+    expect(formatted).toContain('param &amp; test &lt;val&gt; &amp; result');
+    expect(formatted).toContain('DEV&lt;TEST&gt;');
+  });
 });

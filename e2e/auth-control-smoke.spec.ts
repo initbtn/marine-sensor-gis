@@ -68,10 +68,12 @@ test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // 1. 관제 모드 토글 검증
+    // 1. 관제 모드 토글 및 클라우드 집계 패널 노출 검증
     const cloudBtn = page.getByText('🏢 내륙 클라우드');
     await expect(cloudBtn).toBeVisible();
     await cloudBtn.click();
+    await expect(page.getByTestId('cloud-aggregated-summary')).toBeVisible();
+    await expect(page.getByText('당월 환경 규제 준수율')).toBeVisible();
 
     // 2. 위성 네트워크 상태 토글 검증
     const networkBtn = page.getByTestId('network-toggle-btn');
