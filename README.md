@@ -160,7 +160,7 @@ npm run build
 | 스프린트 | 마일스톤 주제 | 에이전트 리포트 (MD) | 팀원 공유용 슬라이드 | 상태 |
 |---|---|---|---|---|
 | **Sprint 1** | **도메인 UX 규율 & 4대 직무 스토리보드** | [Sprint 1 Report](./docs/scrum/sprint-1-report.md) | [Sprint 1 Slides](./docs/scrum/sprint-1-slides.md) | **COMPLETED** |
-| **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | [Sprint 2 Report](./docs/scrum/sprint-2-report.md) | [Sprint 2 Slides](./docs/scrum/sprint-2-slides.md) | ⏳ 대기 |
+| **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | [Sprint 2 Report](./docs/scrum/sprint-2-report.md) | [Sprint 2 Slides](./docs/scrum/sprint-2-slides.md) | **COMPLETED** |
 | **Sprint 3** | **Supabase 2중 스키마 & 데이터 파이프라인** | [Sprint 3 Report](./docs/scrum/sprint-3-report.md) | [Sprint 3 Slides](./docs/scrum/sprint-3-slides.md) | ⏳ 대기 |
 | **Sprint 4** | **4대 직무별 맞춤 대시보드 통합 조립** | [Sprint 4 Report](./docs/scrum/sprint-4-report.md) | [Sprint 4 Slides](./docs/scrum/sprint-4-slides.md) | ⏳ 대기 |
 | **Sprint 5** | **종합 E2E 검증 및 선급 감사 시연** | [Sprint 5 Report](./docs/scrum/sprint-5-report.md) | [Sprint 5 Slides](./docs/scrum/sprint-5-slides.md) | ⏳ 대기 |
