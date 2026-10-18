@@ -1,11 +1,26 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, useMap } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polygon,
+  Polyline,
+  CircleMarker,
+  Tooltip,
+  useMap,
+} from 'react-leaflet';
 import L from 'leaflet';
 import { VesselInfo, Position } from '../../types/telemetry';
+import { DEFAULT_VESSEL_TRACKS } from '../../services/mockTelemetry';
 import { Compass, Crosshair } from 'lucide-react';
 
-// Custom vessel SVG marker creator
-const createVesselIcon = (status: 'NORMAL' | 'WARNING' | 'CRITICAL', isSelected: boolean) => {
+// Custom vessel SVG marker creator with heading rotation (IEC 62288)
+const createVesselIcon = (
+  status: 'NORMAL' | 'WARNING' | 'CRITICAL',
+  isSelected: boolean,
+  headingDeg: number = 0
+) => {
   const colorMap = {
     NORMAL: '#00F5D4',
     WARNING: '#FF9F1C',
@@ -19,9 +34,10 @@ const createVesselIcon = (status: 'NORMAL' | 'WARNING' | 'CRITICAL', isSelected:
   return L.divIcon({
     className: 'custom-vessel-marker',
     html: `
-      <div style="transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;">
+      <div style="transform: translate(-50%, -50%) rotate(${headingDeg}deg); display: flex; align-items: center; justify-content: center; transition: transform 0.4s ease;">
         <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6));">
           <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+          <line x1="12" y1="2" x2="12" y2="0" stroke="#FFFFFF" stroke-width="2" />
         </svg>
       </div>
     `,
@@ -110,6 +126,13 @@ export const MarineMap: React.FC<MarineMapProps> = ({
     ? [selectedVessel.position.lat, selectedVessel.position.lng]
     : [35.1, 129.04]; // Busan port default
 
+  const activeTrack: Position[] =
+    trackHistory && trackHistory.length > 1
+      ? trackHistory
+      : selectedVessel && DEFAULT_VESSEL_TRACKS[selectedVessel.id]
+      ? DEFAULT_VESSEL_TRACKS[selectedVessel.id]
+      : [];
+
   return (
     <div
       className="marine-map-container relative rounded-xl overflow-hidden shadow-xl w-full h-full min-h-[480px] border border-marine-border bg-marine-app"
@@ -183,25 +206,69 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           </Polygon>
         )}
 
-        {/* 실시간 선박 이동 항적 폴리라인 */}
-        {trackHistory.length > 1 && (
-          <Polyline
-            positions={trackHistory.map((p) => [p.lat, p.lng])}
-            color="#00F5D4"
-            dashArray="4, 6"
-            weight={3}
-            opacity={0.85}
-          />
+        {/* 1. 실시간 선박 이동 항적 폴리라인 및 웨이포인트 */}
+        {activeTrack.length > 1 && (
+          <>
+            <Polyline
+              positions={activeTrack.map((p) => [p.lat, p.lng])}
+              color="#00F5D4"
+              dashArray="6, 6"
+              weight={3}
+              opacity={0.9}
+            />
+            {activeTrack.map((pt, idx) => (
+              <CircleMarker
+                key={`wp-${idx}`}
+                center={[pt.lat, pt.lng]}
+                radius={idx === activeTrack.length - 1 ? 5 : 3.5}
+                pathOptions={{
+                  color: '#00F5D4',
+                  fillColor: idx === activeTrack.length - 1 ? '#00F5D4' : '#0B132B',
+                  fillOpacity: 0.9,
+                  weight: 1.5,
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -5]} opacity={0.9}>
+                  <span className="text-[10px] font-mono">
+                    {idx === activeTrack.length - 1 ? '현재 위치 (GPS)' : `항로 WP-${idx + 1}`}
+                  </span>
+                </Tooltip>
+              </CircleMarker>
+            ))}
+          </>
         )}
 
-        {/* 선박 위치 마커 표출 */}
+        {/* 2. IEC 62288 전방 침로/속력 벡터 (Speed & Heading Leader Lines) */}
+        {vessels.map((v) => {
+          const rad = (v.headingDeg * Math.PI) / 180;
+          const vectorLen = (v.speedKts / 20) * 0.12;
+          const targetLat = v.position.lat + Math.cos(rad) * vectorLen;
+          const targetLng = v.position.lng + Math.sin(rad) * vectorLen * 1.2;
+          const isSelected = selectedVessel?.id === v.id;
+
+          return (
+            <Polyline
+              key={`heading-vector-${v.id}`}
+              positions={[
+                [v.position.lat, v.position.lng],
+                [targetLat, targetLng],
+              ]}
+              color={isSelected ? '#FFFFFF' : '#00F5D4'}
+              weight={isSelected ? 2.5 : 1.5}
+              dashArray={isSelected ? undefined : '3, 4'}
+              opacity={0.9}
+            />
+          );
+        })}
+
+        {/* 3. 선박 위치 마커 표출 (headingDeg 각도 회전 적용) */}
         {vessels.map((vessel) => {
           const isSelected = selectedVessel?.id === vessel.id;
           return (
             <Marker
               key={vessel.id}
               position={[vessel.position.lat, vessel.position.lng]}
-              icon={createVesselIcon(vessel.status, isSelected)}
+              icon={createVesselIcon(vessel.status, isSelected, vessel.headingDeg)}
               eventHandlers={{
                 click: () => onSelectVessel?.(vessel.id),
               }}
@@ -255,6 +322,14 @@ export const MarineMap: React.FC<MarineMapProps> = ({
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
           <span>규제 초과 선박</span>
+        </div>
+        <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+          <span className="w-3 h-0.5 bg-marine-cyan" />
+          <span className="text-marine-cyan">선박 침로 벡터 (Heading)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-0.5 border-t border-dashed border-marine-cyan" />
+          <span className="text-marine-cyan">운항 항적 (Track)</span>
         </div>
         {showEcaZone && (
           <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">

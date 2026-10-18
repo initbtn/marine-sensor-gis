@@ -6,6 +6,7 @@ import {
 } from '../../services/mockTelemetry';
 import { dualDbSyncEngine } from '../../services/dualDbSyncEngine';
 import { sendTelegramAlert } from '../../services/telegramAlertService';
+import { accessAuditService } from '../../services/accessAuditService';
 import { useMarineDashboardStore } from '../../stores/useMarineDashboardStore';
 import { useTelemetryStore } from '../../stores/useTelemetryStore';
 import { useTelemetryStream } from '../../hooks/useTelemetryStream';
@@ -172,6 +173,10 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
     const next = !bypassValveOpen;
     setBypassValveOpen(next);
     await edgeStream.toggleBypass(next);
+    await accessAuditService.logAuditEvent({
+      actionType: 'BYPASS_TOGGLE',
+      targetPath: typeof window !== 'undefined' ? window.location.pathname : '/',
+    });
   }, [bypassValveOpen, setBypassValveOpen, edgeStream]);
 
   return (
