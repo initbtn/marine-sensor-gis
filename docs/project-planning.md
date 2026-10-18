@@ -68,31 +68,31 @@
 |---|---|---|---|
 | **Sprint 1** | **도메인 UX 규율 & 4대 직무 스토리보드** | • 선급 표준(KR, DNV, ABS) 도메인 학습서<br>• 해양 HMI 4대 핵심 규율 및 다크 테마<br>• 4대 역할별 사용자 여정 및 ASCII 와이어프레임 | **COMPLETED** (PR #2) |
 | **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | • 8대 시각화 제품군 & 14대 파라미터 매트릭스<br>• 원형 게이지, 5축 레이더, 위반 히트맵, GIS 맵<br>• 파나시아 HMI 장식용 애니메이션 지양 규율 반영 | **COMPLETED** (PR #4) |
-| **Sprint 3** | **실측 오픈API 어댑터 & 실시간 파이프라인** | • 공공데이터(PORT-MIS) & AISStream 어댑터 (TDD)<br>• Supabase 이원화 스키마 DDL 배포 & Realtime<br>• Store-and-Forward 동기화 엔진 (`dualDbSyncEngine`)<br>• GCP 선박 엣지 데몬 컨테이너 배포<br>• 프론트엔드 실시간 웹소켓 연동 (`useTelemetryStream`) | **🚀 착수 (현재)** |
-| **Sprint 4** | **4대 직무 대시보드 조립 & 원격 제어** | • 기관사/관제사/감사관/진단원 4대 대시보드 통합<br>• Vercel 엣지 프록시(`/api/edge`) 다운링크 연결<br>• 비상 바이패스 밸브 및 위성 단절 인터랙티브 시연 | ⏳ 대기 |
-| **Sprint 5** | **종합 E2E 검증 & Cloudflare R2 아카이빙** | • 전 구간 통합 테스트 & Vitest 커버리지 극대화<br>• R2 일일 압축 Parquet 아카이브 연동<br>• 선급 감사관용 법정 PDF 리포트 발행 시연 | ⏳ 대기 |
+| **Sprint 3** | **실측 오픈API 어댑터 & 실시간 파이프라인** | • 공공데이터(PORT-MIS) & AISStream 어댑터 (TDD)<br>• Supabase 이원화 스키마 DDL 배포 & Realtime<br>• Store-and-Forward 동기화 엔진 (`dualDbSyncEngine`)<br>• GCP 선박 엣지 데몬 컨테이너 배포<br>• 프론트엔드 실시간 웹소켓 연동 (`useTelemetryStream`) | **COMPLETED** (PR #6) |
+| **Sprint 4** | **4대 직무 대시보드 조립 & 원격 제어** | • 기관사/관제사/감사관/진단원 4대 대시보드 통합<br>• Vercel 엣지 프록시(`/api/edge`) 다운링크 연결<br>• 비상 바이패스 밸브 및 위성 단절 인터랙티브 시연<br>• 텔레그램 실시간 장애 알림 연동 | **COMPLETED** (PR #10) |
+| **Sprint 5** | **순수 함수 컴포넌트(SOLID) & 3-Layer 반응형 디자인 시스템 전면 리팩터링 및 시각화 매트릭스 완결** | • React SOLID 5원칙 기반 컴포넌트/훅 분리 (`useSensorDashboard`)<br>• 전 UI 컴포넌트 인라인 스타일 완전 제거 (`style={{ ... }}` 0개)<br>• Tailwind `@layer base`, `@layer components`, `@layer utilities` 3계층 아키텍처<br>• 4대 직무별 시각화 매트릭스 완결 (`HeatmapChart`, `RadarChart` 바인딩)<br>• 모바일/태블릿/데스크톱 반응형 뷰포트 및 터치 타깃($\ge 44\text{px}$) 확보 | **🚀 착수 (현재)** |
+| **Sprint 6** | **종합 E2E 검증 & Cloudflare R2 아카이빙** | • 전 구간 통합 테스트 & Vitest 커버리지 극대화<br>• R2 일일 압축 Parquet 아카이브 연동<br>• 선급 감사관용 법정 PDF 리포트 발행 시연 | ⏳ 대기 |
 
 ---
 
-## 5. Sprint 3 세부 진행 단계 (Sprint 3 Detailed Steps)
+## 5. Sprint 5 세부 진행 단계 (Sprint 5 Detailed Steps)
 
-1. **[Step 1] 실측 오픈API 어댑터 구현 (TDD)**
-   - `docs/api/` PDF 명세 기반 `src/services/portMisService.ts` (선박제원/입출항 XML 파서)
-   - `src/services/aisMessageAdapter.ts` (AISStream JSON 파서 및 `TrueHeading: 511` 예외 처리)
-   - `tests/portMisService.spec.ts` & `tests/aisMessageAdapter.spec.ts` 단위 테스트 통과
-2. **[Step 2] Supabase 이원화 스키마 DDL 배포**
-   - `supabase/migrations/001_dual_schema_setup.sql` 작성
-   - `marine_edge` (선박 텔레메트리 버퍼, 알람) & `marine_control` (선박 마스터, 집계 로그) 생성
-   - `supabase_realtime` 퍼블리케이션 등록 (웹소켓 실시간 브로드캐스트 활성화)
-3. **[Step 3] Store-and-Forward 동기화 엔진 구현 (`dualDbSyncEngine.ts`)**
-   - 위성 통신 단절 시 로컬 `marine_edge` 큐잉 (`PENDING`)
-   - 위성 복구 시 `marine_control` 일괄 동기화 (`SYNCED`) 로직 TDD 검증
-4. **[Step 4] GCP 선박 엣지 데몬 배포 (`marine-edge-pc`)**
-   - Python 10Hz 센서 시뮬레이터 (IMO MEPC.340(77)) 및 FastAPI 컨트롤 엔드포인트
-   - GCP VM Docker 컨테이너 구동
-5. **[Step 5] 프론트엔드 실시간 웹소켓 바인딩 & Vercel 프록시 구성**
-   - `useTelemetryStream.ts` 훅을 통해 ECharts 게이지 및 지도에 실시간 수치 공급
-   - `vite.config.ts` 및 Vercel rewrites에 `/api/edge/*` 프록시 구성
-6. **[Step 6] Sprint 3 보고서 발행 및 리뷰**
-   - `docs/scrum/sprint-3-report.md` & `sprint-3-slides.md` 작성
-   - `review-army` 코드 리뷰 후 머지
+1. **[Step 1] 3-Layer CSS 아키텍처 및 Tailwind 인프라 구축**
+   - `tailwindcss`, `postcss`, `autoprefixer` 설치 및 `tailwind.config.js` 구성 (`MarineTheme.colors` 연동)
+   - `src/index.css`에 `@layer base`(CSS 변수 토큰), `@layer components`(시맨틱 위젯 클래스), `@layer utilities`(반응형 그리드 및 터치 영역) 구조화
+2. **[Step 2] 상태 및 I/O 분리 Custom Hook 구현 (`useSensorDashboard.ts`) (SRP, DIP)**
+   - `SensorDashboard.tsx` 내의 10Hz GCP 소켓, 5초 타이머 폴링, Store-and-Forward 네트워크 토글, 알람 처리, 비상 바이패스 다운링크, 텔레그램 알림 로직을 전담 훅으로 추출
+   - 뷰 컴포넌트에 필요한 Narrow Props 및 핸들러 콜백만 노출 (ISP)
+3. **[Step 3] 순수 함수 컴포넌트(`SensorDashboardView.tsx`) 및 4대 직무 위젯 레지스트리 (OCP, LSP)**
+   - 렌더 단계 부수 효과 0, $UI = f(State)$ 멱등성을 보장하는 순수 함수 컴포넌트 구현 (`React.memo`)
+   - `data-visualization-matrix.md` §5에 따른 4대 직무 위젯 레지스트리(`ROLE_WIDGET_COMPONENTS`) 구축
+   - `COMPLIANCE_OFFICER` 직무에 `HeatmapChart`, `DIAGNOSTICIAN` 직무에 `RadarChart` 실데이터 바인딩
+4. **[Step 4] 전 UI 컴포넌트 인라인 스타일 0개 달성 & 반응형 터치 타깃 확보**
+   - `SensorDashboard`, `ModeToggleBar`, `SensorCards`, `AlarmList`, `RoleSwitcher`, `MetricCard`, `AlertBadge` 내 인라인 `style={{ ... }}` 전면 제거
+   - 모바일 뷰포트(`< 768px`) 단일 컬럼 스택, 데스크톱(`>= 1024px`) 12컬럼 그리드, 최소 터치 타깃 $44\text{px} \times 44\text{px}$ 보장
+5. **[Step 5] 2-Tier 테스트 검증 (Tier 1 Vitest + Tier 2 Playwright Responsive)**
+   - Tier 1: 단위/통합 테스트 (기존 55개 테스트 유지 및 순수 함수 렌더링/훅 테스트 추가)
+   - Tier 2: Playwright 데스크톱 & 모바일(`viewport: { width: 375, height: 667 }`) 뷰포트 E2E 검증
+6. **[Step 6] Sprint 5 보고서 발행 및 review-army 코드 리뷰**
+   - `docs/scrum/sprint-5-report.md` & `sprint-5-slides.md` 작성
+   - `review-army` 코드 리뷰 후 사용자 승인을 거쳐 PR 머지 및 Vercel 배포

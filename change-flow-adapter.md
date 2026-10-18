@@ -108,3 +108,31 @@ npm run build
      }
      ```
 
+---
+
+## 6. 구현 규율 및 프론트엔드 SOLID 헌장
+
+우리 프로젝트의 모든 UI/프론트엔드 컴포넌트는 리액트 기본 철학($UI = f(State)$, One-Way Data Flow, Idempotence, Composition over Inheritance)과 객체지향 SOLID 5원칙을 준수해야 합니다.
+
+### 6.1 프론트엔드 SOLID 5원칙 규약
+1. **SRP (단일 책임 원칙)**:
+   - UI 컴포넌트는 오직 화면 프레젠테이션만 전담하며 `React.memo`로 감싼 순수 함수(Pure Function)로 작성한다.
+   - 데이터 fetch, 10Hz 웹소켓 스트림, 5초 타이머 폴링, Store-and-Forward 동기화, 알람 발송 등 모든 비즈니스 로직과 부수 효과는 Custom Hook(`useSensorDashboard` 등)으로 100% 분리한다.
+2. **OCP (개방-폐쇄 원칙)**:
+   - 새로운 역할(Role)이나 시각화 위젯 추가 시 기존 렌더링 블록 내 `if-else` 또는 거대 `switch`문을 수정하지 않고, 공통 인터페이스(`BaseChartProps`)를 따르는 위젯 레지스트리(`ROLE_WIDGET_COMPONENTS`)에 새 컴포넌트를 등록하여 확장한다.
+3. **LSP (리스코프 치환 원칙)**:
+   - 동일한 Base 차트/위젯 규격을 공유하는 컴포넌트는 상위 레이아웃이나 대시보드의 수정 없이 상호 치환 가능해야 한다.
+4. **ISP (인터페이스 분리 원칙)**:
+   - 하위 컴포넌트에 거대한 전체 상태 객체(Fat Props)를 통째로 전달하지 않고, 각 컴포넌트가 실제로 소비하는 최소 단위의 좁은 속성(Narrow Props)만 주입한다.
+5. **DIP (의존성 역전 원칙)**:
+   - UI 뷰 컴포넌트가 구체적인 I/O 클라이언트(FastAPI 엣지 클라이언트, Supabase 클라이언트 등)를 직접 임포트하여 인스턴스화하지 않고, Hook 또는 Props를 통해 전달받는다.
+
+### 6.2 3-Layer CSS 아키텍처 및 무(0)인라인 스타일 원칙
+- **인라인 스타일 전면 금지**: 전 UI 컴포넌트에서 `style={{ ... }}` 객체 사용을 완전 금지한다 (0개 유지).
+- **3-Layer CSS 체계**:
+  - `@layer base`: 테마 컬러 토큰 및 CSS 변수(`--marine-*`) 선언.
+  - `@layer components`: 해양 도메인 전용 위젯 및 카드 클래스(`.marine-card`, `.marine-header`, `.marine-badge` 등) 캡슐화.
+  - `@layer utilities`: Tailwind 반응형 그리드 및 최소 터치 타깃($\ge 44\text{px}$) 유틸리티 제어.
+- **모바일/반응형 뷰포트**: 모바일 단일 컬럼 스택(`< 768px`) 및 데스크톱 12컬럼 그리드(`>= 1024px`)를 지원하며, 터치 가능한 모든 인터랙티브 요소는 $44\text{px} \times 44\text{px}$ 이상의 터치 영역을 확보한다.
+
+
