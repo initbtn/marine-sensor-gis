@@ -10,7 +10,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<MarineAppShell />}>
-          <Route path="/" element={<SensorDashboard />} />
+          <Route path="/" element={<SensorDashboard standalone={false} />} />
           <Route path="/gis" element={<FullGisPage />} />
           <Route path="/reports" element={<ComplianceReportPage />} />
           <Route path="/alarms" element={<AlarmAuditPage />} />

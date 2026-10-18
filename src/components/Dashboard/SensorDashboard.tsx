@@ -15,7 +15,11 @@ import { ModeToggleBar } from './ModeToggleBar';
 import { RoleSwitcher } from '../Common/RoleSwitcher';
 import { ShieldAlert, Play, Pause } from 'lucide-react';
 
-export const SensorDashboard: React.FC = () => {
+export interface SensorDashboardProps {
+  standalone?: boolean;
+}
+
+export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = true }) => {
   const {
     currentRole,
     setRole,
@@ -172,9 +176,22 @@ export const SensorDashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4" data-testid="sensor-dashboard">
-      {/* Dashboard Top Control Toolbar (Standalone & In-Shell 호환) */}
+      {/* Dashboard Top Control Toolbar (Standalone 환경 또는 페이지 액션 바) */}
       <div className="bg-slate-900/90 rounded-xl p-3 border border-marine-border flex items-center justify-between flex-wrap gap-3 shadow-md">
-        <RoleSwitcher currentRole={currentRole} onRoleChange={setRole} />
+        {standalone ? (
+          <RoleSwitcher currentRole={currentRole} onRoleChange={setRole} />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-marine-cyan">
+              ⚡ 실시간 센서 관제 패널
+            </span>
+            {selectedVessel && (
+              <span className="marine-chip text-xs">
+                {selectedVessel.name} ({selectedVessel.imoNumber})
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {/* 비상 바이패스 제어 버튼 */}
@@ -214,33 +231,35 @@ export const SensorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2원화 모드 및 위성 네트워크 바 */}
-      <ModeToggleBar
-        operatingMode={operatingMode}
-        networkStatus={networkStatus}
-        syncStatus={syncStatus}
-        pendingCount={pendingCount}
-        onToggleOperatingMode={setOperatingMode}
-        onToggleNetworkStatus={async () => {
-          const next = networkStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-          setNetworkStatus(next);
-          await dualDbSyncEngine.setSatelliteLink(next === 'ONLINE');
-          if (next === 'ONLINE') {
-            await dualDbSyncEngine.flushSyncQueue();
-            setPendingCount(dualDbSyncEngine.getQueueLength());
-          }
-        }}
-        onManualFlush={async () => {
-          setSyncStatus('SYNCING');
-          try {
-            await dualDbSyncEngine.flushSyncQueue();
-            setPendingCount(dualDbSyncEngine.getQueueLength());
-            setSyncStatus('IDLE');
-          } catch {
-            setSyncStatus('ERROR');
-          }
-        }}
-      />
+      {/* 2원화 모드 및 위성 네트워크 바 (스탠드얼론 환경 전용) */}
+      {standalone && (
+        <ModeToggleBar
+          operatingMode={operatingMode}
+          networkStatus={networkStatus}
+          syncStatus={syncStatus}
+          pendingCount={pendingCount}
+          onToggleOperatingMode={setOperatingMode}
+          onToggleNetworkStatus={async () => {
+            const next = networkStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+            setNetworkStatus(next);
+            await dualDbSyncEngine.setSatelliteLink(next === 'ONLINE');
+            if (next === 'ONLINE') {
+              await dualDbSyncEngine.flushSyncQueue();
+              setPendingCount(dualDbSyncEngine.getQueueLength());
+            }
+          }}
+          onManualFlush={async () => {
+            setSyncStatus('SYNCING');
+            try {
+              await dualDbSyncEngine.flushSyncQueue();
+              setPendingCount(dualDbSyncEngine.getQueueLength());
+              setSyncStatus('IDLE');
+            } catch {
+              setSyncStatus('ERROR');
+            }
+          }}
+        />
+      )}
 
       {/* Pure Presentational Dashboard View */}
       <SensorDashboardView
