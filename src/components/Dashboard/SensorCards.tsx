@@ -7,9 +7,10 @@ import { Gauge, Droplets, Activity, Zap, Waves, Flame } from 'lucide-react';
 interface SensorCardsProps {
   scrubber: ScrubberTelemetry;
   bwts: BWTSTelemetry;
+  className?: string;
 }
 
-export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts }) => {
+export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts, className = '' }) => {
   const isSoxAlert = scrubber.soxPpm > MarineTheme.thresholds.soxGlobalPpm;
   const isPhAlert = scrubber.phDischarge < MarineTheme.thresholds.washwaterPhMin;
   const isTurbidityAlert = scrubber.turbidityFtu > MarineTheme.thresholds.turbidityMaxNtu;
@@ -17,45 +18,25 @@ export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts }) => {
   const isTroAlert = bwts.troPpm > MarineTheme.thresholds.troMaxPpm;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '16px 0' }}>
+    <div className={`flex flex-col gap-4 my-4 ${className}`}>
       {/* 1. Scrubber Group */}
-      <div
-        style={{
-          background: MarineTheme.colors.bgPrimary,
-          borderRadius: '12px',
-          padding: '16px',
-          border: `1px solid ${MarineTheme.colors.border}`,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '12px',
-            borderBottom: `1px solid ${MarineTheme.colors.border}`,
-            paddingBottom: '8px',
-          }}
-        >
-          <h4 style={{ margin: 0, color: MarineTheme.colors.textPrimary, fontSize: '15px', fontWeight: 600 }}>
+      <div className="bg-marine-card rounded-xl p-4 border border-marine-border shadow-md">
+        <div className="flex justify-between items-center mb-3 pb-2 border-b border-marine-border">
+          <h4 className="m-0 text-marine-primary text-sm md:text-base font-semibold">
             🚢 탈황 설비 (SOx Scrubber)
           </h4>
           <span
-            style={{
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontWeight: 700,
-              background: isPhAlert || isSoxAlert ? 'rgba(231, 29, 54, 0.2)' : 'rgba(0, 245, 212, 0.15)',
-              color: isPhAlert || isSoxAlert ? MarineTheme.colors.criticalCrimson : MarineTheme.colors.ecoCyan,
-              border: `1px solid ${isPhAlert || isSoxAlert ? MarineTheme.colors.criticalCrimson : MarineTheme.colors.ecoCyan}`,
-            }}
+            className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+              isPhAlert || isSoxAlert
+                ? 'bg-rose-950/40 text-rose-400 border-rose-500/40 animate-pulse'
+                : 'bg-emerald-950/40 text-emerald-400 border-emerald-500/40'
+            }`}
           >
             {isPhAlert || isSoxAlert ? '규제 경보 감지' : '정상 운항 (Compliant)'}
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             title="배기가스 SOx"
             value={scrubber.soxPpm}
@@ -92,43 +73,23 @@ export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts }) => {
       </div>
 
       {/* 2. BWTS Group */}
-      <div
-        style={{
-          background: MarineTheme.colors.bgPrimary,
-          borderRadius: '12px',
-          padding: '16px',
-          border: `1px solid ${MarineTheme.colors.border}`,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '12px',
-            borderBottom: `1px solid ${MarineTheme.colors.border}`,
-            paddingBottom: '8px',
-          }}
-        >
-          <h4 style={{ margin: 0, color: MarineTheme.colors.textPrimary, fontSize: '15px', fontWeight: 600 }}>
+      <div className="bg-marine-card rounded-xl p-4 border border-marine-border shadow-md">
+        <div className="flex justify-between items-center mb-3 pb-2 border-b border-marine-border">
+          <h4 className="m-0 text-marine-primary text-sm md:text-base font-semibold">
             🌊 평형수 처리 (BWTS)
           </h4>
           <span
-            style={{
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontWeight: 700,
-              background: isFilterAlert || isTroAlert ? 'rgba(255, 159, 28, 0.2)' : 'rgba(0, 245, 212, 0.15)',
-              color: isFilterAlert || isTroAlert ? MarineTheme.colors.warningAmber : MarineTheme.colors.ecoCyan,
-              border: `1px solid ${isFilterAlert || isTroAlert ? MarineTheme.colors.warningAmber : MarineTheme.colors.ecoCyan}`,
-            }}
+            className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+              isFilterAlert || isTroAlert
+                ? 'bg-amber-950/40 text-amber-400 border-amber-500/40'
+                : 'bg-emerald-950/40 text-emerald-400 border-emerald-500/40'
+            }`}
           >
             {isFilterAlert ? '필터 차압 주의' : isTroAlert ? 'TRO 초과 경보' : '살균 적합 (Compliant)'}
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             title="평형수 유량"
             value={bwts.flowRateM3h}

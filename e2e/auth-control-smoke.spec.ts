@@ -43,11 +43,11 @@ test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
     await expect(headerTitle.first()).toBeVisible();
 
     // 2. ISA-101 / IEC 62288 알람 리스트 또는 센서 요약 카드 영역 노출 검증
-    const dashboardRoot = page.locator('main, #root');
+    const dashboardRoot = page.locator('main');
     await expect(dashboardRoot).toBeVisible();
 
     // 3. Leaflet GIS 지도 컨테이너 존재 검증
-    const mapContainer = page.locator('.leaflet-container, [data-testid="marine-gis-map"], #map');
+    const mapContainer = page.locator('.leaflet-container, [data-testid="marine-map"], #map');
     expect(await mapContainer.count()).toBeGreaterThan(0);
   });
 
@@ -69,19 +69,19 @@ test.describe('Post-Deploy Smoke & HMI Control Dashboard', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // 1. 관제 모드 토글 및 클라우드 집계 패널 노출 검증
-    const cloudBtn = page.getByText('🏢 내륙 클라우드');
+    const cloudBtn = page.getByRole('button', { name: '🏢 내륙 클라우드' }).first();
     await expect(cloudBtn).toBeVisible();
     await cloudBtn.click();
     await expect(page.getByTestId('cloud-aggregated-summary')).toBeVisible();
     await expect(page.getByText('당월 환경 규제 준수율')).toBeVisible();
 
     // 2. 위성 네트워크 상태 토글 검증
-    const networkBtn = page.getByTestId('network-toggle-btn');
+    const networkBtn = page.getByTestId('network-toggle-btn').first();
     await expect(networkBtn).toBeVisible();
     await networkBtn.click();
-    await expect(page.getByText(/위성 링크 단절 \(Offline\)/i)).toBeVisible();
+    await expect(page.getByText(/위성 링크 단절 \(Offline\)/i).first()).toBeVisible();
 
     // 3. 대기 큐 인디케이터 표시 검증
-    await expect(page.getByText(/대기 큐:/i)).toBeVisible();
+    await expect(page.getByText(/대기 큐:/i).first()).toBeVisible();
   });
 });

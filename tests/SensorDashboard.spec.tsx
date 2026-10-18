@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SensorDashboard } from '../src/components/Dashboard/SensorDashboard';
 import { dualDbSyncEngine } from '../src/services/dualDbSyncEngine';
+import { useMarineDashboardStore } from '../src/stores/useMarineDashboardStore';
+import { useTelemetryStore } from '../src/stores/useTelemetryStore';
 
 // Mock Leaflet and ECharts for fast 0ms testing
 vi.mock('../src/components/Map/MarineMap', () => ({
@@ -32,6 +34,8 @@ vi.mock('../src/hooks/useTelemetryStream', () => ({
 describe('SensorDashboard 4대 직무 조립 & 2원화 HMI 관제 대시보드', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useMarineDashboardStore.getState().reset();
+    useTelemetryStore.getState().reset();
   });
 
   it('ModeToggleBar가 대시보드 상단에 정상 마운트되어야 한다', () => {
@@ -94,7 +98,7 @@ describe('SensorDashboard 4대 직무 조립 & 2원화 HMI 관제 대시보드',
     const inspectorBtn = screen.getByTestId('role-btn-compliance_officer');
     fireEvent.click(inspectorBtn);
 
-    expect(inspectorBtn).toHaveStyle({ backgroundColor: 'rgb(0, 245, 212)' });
+    expect(inspectorBtn).toHaveClass('bg-marine-cyan');
   });
 
   it('MetricCard 기반 디자인 시스템 센서 카드가 렌더링되어야 한다', () => {

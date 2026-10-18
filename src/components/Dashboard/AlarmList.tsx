@@ -1,65 +1,50 @@
 import React from 'react';
 import { AlarmEvent } from '../../types/telemetry';
-import { MarineTheme } from '../../styles/theme';
 import { AlertBadge } from '../Common/AlertBadge';
 
 interface AlarmListProps {
   alarms: AlarmEvent[];
   onAcknowledge: (alarmId: string) => void;
+  className?: string;
 }
 
-export const AlarmList: React.FC<AlarmListProps> = ({ alarms, onAcknowledge }) => {
+export const AlarmList: React.FC<AlarmListProps> = ({ alarms, onAcknowledge, className = '' }) => {
   return (
     <div
-      style={{
-        background: MarineTheme.colors.bgPrimary,
-        borderRadius: '12px',
-        padding: '16px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-        border: `1px solid ${MarineTheme.colors.border}`,
-        marginTop: '16px',
-      }}
+      className={`bg-marine-card rounded-xl p-4 border border-marine-border shadow-lg mt-4 ${className}`}
       data-testid="alarm-list"
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h4 style={{ margin: 0, fontSize: '15px', color: MarineTheme.colors.textPrimary, fontWeight: 600 }}>
+      <div className="flex justify-between items-center mb-3">
+        <h4 className="m-0 text-sm md:text-base text-marine-primary font-semibold">
           ⚠️ 실시간 설비 경보 및 규제 감시 이력
         </h4>
-        <span style={{ fontSize: '12px', color: MarineTheme.colors.textSecondary }}>총 {alarms.length}건</span>
+        <span className="text-xs text-marine-secondary">총 {alarms.length}건</span>
       </div>
 
       {alarms.length === 0 ? (
-        <div style={{ padding: '24px', textAlign: 'center', color: MarineTheme.colors.textMuted, fontSize: '14px' }}>
+        <div className="py-6 text-center text-marine-muted text-sm">
           현재 감지된 설비 이상 또는 규제 위반 경보가 없습니다. (정상 운항 중)
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+        <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto marine-scrollbar pr-1">
           {alarms.map((alarm) => {
             const isCritical = alarm.level === 'CRITICAL';
             return (
               <div
                 key={alarm.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 14px',
-                  borderRadius: '6px',
-                  background: isCritical ? 'rgba(231, 29, 54, 0.12)' : 'rgba(255, 159, 28, 0.12)',
-                  borderLeft: `4px solid ${isCritical ? MarineTheme.colors.criticalCrimson : MarineTheme.colors.warningAmber}`,
-                  borderTop: `1px solid ${MarineTheme.colors.border}`,
-                  borderRight: `1px solid ${MarineTheme.colors.border}`,
-                  borderBottom: `1px solid ${MarineTheme.colors.border}`,
-                  fontSize: '13px',
-                }}
+                className={`flex justify-between items-center p-2.5 md:px-3.5 rounded-md border border-marine-border text-xs md:text-sm ${
+                  isCritical
+                    ? 'bg-rose-950/20 border-l-4 border-l-rose-500'
+                    : 'bg-amber-950/20 border-l-4 border-l-amber-500'
+                }`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="flex items-center gap-2.5">
                   <AlertBadge level={alarm.level} />
                   <div>
-                    <div style={{ fontWeight: 600, color: MarineTheme.colors.textPrimary }}>
+                    <div className="font-semibold text-marine-primary">
                       [{alarm.code}] {alarm.message}
                     </div>
-                    <div style={{ fontSize: '11px', color: MarineTheme.colors.textMuted, marginTop: '2px' }}>
+                    <div className="text-[11px] text-marine-muted mt-0.5">
                       {alarm.vesselName} ({alarm.facilityType}) | {new Date(alarm.timestamp).toLocaleTimeString('ko-KR')}
                     </div>
                   </div>
@@ -68,22 +53,14 @@ export const AlarmList: React.FC<AlarmListProps> = ({ alarms, onAcknowledge }) =
                 <div>
                   {!alarm.acknowledged ? (
                     <button
+                      type="button"
                       onClick={() => onAcknowledge(alarm.id)}
-                      style={{
-                        padding: '4px 12px',
-                        borderRadius: '4px',
-                        border: `1px solid ${MarineTheme.colors.border}`,
-                        background: 'rgba(0, 245, 212, 0.15)',
-                        color: MarineTheme.colors.ecoCyan,
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
+                      className="px-3 py-1 rounded text-xs font-semibold border border-marine-border bg-emerald-950/30 text-emerald-400 hover:bg-emerald-950/60 min-h-[36px] cursor-pointer transition-all"
                     >
                       확인
                     </button>
                   ) : (
-                    <span style={{ fontSize: '11px', color: MarineTheme.colors.textMuted }}>확인됨</span>
+                    <span className="text-[11px] text-marine-muted">확인됨</span>
                   )}
                 </div>
               </div>

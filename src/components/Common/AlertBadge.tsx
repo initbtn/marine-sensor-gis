@@ -1,5 +1,4 @@
 import React from 'react';
-import { MarineTheme } from '../../styles/theme';
 import { AlarmLevel } from '../../types/telemetry';
 
 interface AlertBadgeProps {
@@ -9,58 +8,41 @@ interface AlertBadgeProps {
   className?: string;
 }
 
+const BADGE_CLASSES: Record<AlarmLevel, { badgeClass: string; dotClass: string; defaultLabel: string }> = {
+  CRITICAL: {
+    badgeClass: 'marine-badge-critical text-rose-400 bg-rose-950/40 border-rose-500/40',
+    dotClass: 'bg-rose-500',
+    defaultLabel: 'CRITICAL',
+  },
+  WARNING: {
+    badgeClass: 'marine-badge-warning text-amber-400 bg-amber-950/40 border-amber-500/40',
+    dotClass: 'bg-amber-500',
+    defaultLabel: 'WARNING',
+  },
+  INFO: {
+    badgeClass: 'marine-badge-normal text-emerald-400 bg-emerald-950/40 border-emerald-500/40',
+    dotClass: 'bg-emerald-400',
+    defaultLabel: 'NORMAL',
+  },
+};
+
 export const AlertBadge: React.FC<AlertBadgeProps> = ({
   level,
   label,
   blinking = false,
   className = '',
 }) => {
-  const getColors = () => {
-    switch (level) {
-      case 'CRITICAL':
-        return {
-          bg: 'rgba(231, 29, 54, 0.2)',
-          border: MarineTheme.colors.criticalCrimson,
-          text: MarineTheme.colors.criticalCrimson,
-          defaultLabel: 'CRITICAL',
-        };
-      case 'WARNING':
-        return {
-          bg: 'rgba(255, 159, 28, 0.2)',
-          border: MarineTheme.colors.warningAmber,
-          text: MarineTheme.colors.warningAmber,
-          defaultLabel: 'WARNING',
-        };
-      case 'INFO':
-      default:
-        return {
-          bg: 'rgba(0, 245, 212, 0.15)',
-          border: MarineTheme.colors.ecoCyan,
-          text: MarineTheme.colors.ecoCyan,
-          defaultLabel: 'NORMAL',
-        };
-    }
-  };
-
-  const styleConfig = getColors();
+  const config = BADGE_CLASSES[level] || BADGE_CLASSES.INFO;
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider ${className} ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wider border ${config.badgeClass} ${className} ${
         blinking ? 'animate-pulse' : ''
       }`}
-      style={{
-        backgroundColor: styleConfig.bg,
-        border: `1px solid ${styleConfig.border}`,
-        color: styleConfig.text,
-      }}
       data-testid={`alert-badge-${level.toLowerCase()}`}
     >
-      <span
-        className="w-1.5 h-1.5 rounded-full"
-        style={{ backgroundColor: styleConfig.text }}
-      />
-      {label || styleConfig.defaultLabel}
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`} />
+      {label || config.defaultLabel}
     </span>
   );
 };

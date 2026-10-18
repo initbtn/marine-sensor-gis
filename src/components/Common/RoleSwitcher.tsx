@@ -1,5 +1,4 @@
 import React from 'react';
-import { MarineTheme } from '../../styles/theme';
 import { UserRole } from '../../types/telemetry';
 import { Anchor, Building2, ShieldCheck, Wrench } from 'lucide-react';
 
@@ -55,11 +54,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
 }) => {
   return (
     <div
-      className={`inline-flex items-center p-1.5 rounded-xl gap-1 shadow-md ${className}`}
-      style={{
-        backgroundColor: MarineTheme.colors.bgSecondary,
-        border: `1px solid ${MarineTheme.colors.border}`,
-      }}
+      className={`inline-flex items-center p-1 rounded-xl gap-1 shadow-md bg-marine-shell border border-marine-border overflow-x-auto ${className}`}
       data-testid="role-switcher"
     >
       {ROLES.map(({ role, title, icon }) => {
@@ -68,23 +63,15 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({
           <button
             key={role}
             onClick={() => onRoleChange(role)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium min-h-[44px] transition-all duration-150 cursor-pointer ${
               isActive
-                ? 'shadow-sm font-semibold'
-                : 'hover:bg-slate-800/60 opacity-80 hover:opacity-100'
+                ? 'bg-marine-cyan text-slate-950 font-bold shadow-sm'
+                : 'bg-transparent text-marine-secondary hover:bg-slate-800/60 hover:text-white'
             }`}
-            style={{
-              backgroundColor: isActive
-                ? MarineTheme.colors.ecoCyan
-                : 'transparent',
-              color: isActive
-                ? MarineTheme.colors.bgPrimary
-                : MarineTheme.colors.textSecondary,
-            }}
             data-testid={`role-btn-${role.toLowerCase()}`}
           >
             {icon}
-            <span>{title}</span>
+            <span className="whitespace-nowrap">{title}</span>
           </button>
         );
       })}
