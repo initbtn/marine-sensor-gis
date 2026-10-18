@@ -135,4 +135,18 @@ npm run build
   - `@layer utilities`: Tailwind 반응형 그리드 및 최소 터치 타깃($\ge 44\text{px}$) 유틸리티 제어.
 - **모바일/반응형 뷰포트**: 모바일 단일 컬럼 스택(`< 768px`) 및 데스크톱 12컬럼 그리드(`>= 1024px`)를 지원하며, 터치 가능한 모든 인터랙티브 요소는 $44\text{px} \times 44\text{px}$ 이상의 터치 영역을 확보한다.
 
+### 6.3 모던 리액트 라이프사이클 및 상태관리(Zustand) 규약
+1. **파생 상태(Derived State) 인라인 계산**:
+   - `useEffect`로 상태를 복제하거나 다시 `setState`하는 안티패턴을 금지하고, 렌더 단계에서 인라인 계산($UI = f(State)$) 또는 `useMemo`로 처리한다.
+2. **사용자 의도(Action)는 이벤트 핸들러에서 집행**:
+   - 클릭, 토글 등 사용자 동작으로 발생하는 부수효과는 상태 플래그를 통한 `useEffect` 감지가 아닌, 이벤트 핸들러 콜백 함수에서 직접 호출한다.
+3. **I/O 연결 수명주기와 컴포넌트 수명주기의 분리 (Store-driven Lifecycle)**:
+   - 10Hz GCP 센서 웹소켓이나 Supabase Realtime 채널 등 장기 수명 연결은 UI 컴포넌트 마운트/언마운트에 의존하지 않고, Zustand 스토어 및 전담 서비스 계층이 수명주기를 소유한다.
+   - UI 컴포넌트는 단지 스토어의 상태를 Selector 기반으로 구독(`useTelemetryStore`)하여 불필요한 재연결 및 리렌더링 폭풍을 방지한다.
+4. **과도(Transient) 업데이트 활용**:
+   - ECharts 옵션 갱신 및 Leaflet GIS 지도 마커 이동 등 고속 시각화 갱신은 리액트 가상 DOM을 거치지 않는 Zustand의 바닐라 구독(`store.subscribe`)을 우선 활용한다.
+5. **대칭적 클린업과 멱등성**:
+   - 모든 Effect는 React 18 StrictMode의 이중 마운트 시에도 리소스 누수가 없도록 완벽한 대칭적 Cleanup 함수를 반환해야 한다.
+
+
 
