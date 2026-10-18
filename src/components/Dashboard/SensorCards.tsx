@@ -7,19 +7,29 @@ import { Gauge, Droplets, Activity, Zap, Waves, Flame } from 'lucide-react';
 interface SensorCardsProps {
   scrubber: ScrubberTelemetry;
   bwts: BWTSTelemetry;
+  activeFacility?: 'SCRUBBER' | 'BWTS' | 'ALL';
   className?: string;
 }
 
-export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts, className = '' }) => {
+export const SensorCards: React.FC<SensorCardsProps> = ({
+  scrubber,
+  bwts,
+  activeFacility = 'ALL',
+  className = '',
+}) => {
   const isSoxAlert = scrubber.soxPpm > MarineTheme.thresholds.soxGlobalPpm;
   const isPhAlert = scrubber.phDischarge < MarineTheme.thresholds.washwaterPhMin;
   const isTurbidityAlert = scrubber.turbidityFtu > MarineTheme.thresholds.turbidityMaxNtu;
   const isFilterAlert = bwts.filterPressureKpa > 70;
   const isTroAlert = bwts.troPpm > MarineTheme.thresholds.troMaxPpm;
 
+  const showScrubber = activeFacility === 'ALL' || activeFacility === 'SCRUBBER';
+  const showBwts = activeFacility === 'ALL' || activeFacility === 'BWTS';
+
   return (
     <div className={`flex flex-col gap-4 my-4 ${className}`}>
       {/* 1. Scrubber Group */}
+      {showScrubber && (
       <div className="bg-marine-card rounded-xl p-4 border border-marine-border shadow-md">
         <div className="flex justify-between items-center mb-3 pb-2 border-b border-marine-border">
           <h4 className="m-0 text-marine-primary text-sm md:text-base font-semibold">
@@ -71,8 +81,10 @@ export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts, classN
           />
         </div>
       </div>
+      )}
 
       {/* 2. BWTS Group */}
+      {showBwts && (
       <div className="bg-marine-card rounded-xl p-4 border border-marine-border shadow-md">
         <div className="flex justify-between items-center mb-3 pb-2 border-b border-marine-border">
           <h4 className="m-0 text-marine-primary text-sm md:text-base font-semibold">
@@ -124,6 +136,7 @@ export const SensorCards: React.FC<SensorCardsProps> = ({ scrubber, bwts, classN
           />
         </div>
       </div>
+      )}
     </div>
   );
 };

@@ -29,6 +29,6 @@ test-results/
 playwright-report/
 
 # Domstack temporary
-.claude/review/
+.claude/
 .vercel
 .env*

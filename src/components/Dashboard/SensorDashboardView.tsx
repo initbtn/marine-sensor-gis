@@ -316,7 +316,7 @@ export const SensorDashboardView: React.FC<SensorDashboardViewProps> = React.mem
               </div>
             </div>
           ) : (
-            <SensorCards scrubber={currentScrubber} bwts={currentBWTS} />
+            <SensorCards scrubber={currentScrubber} bwts={currentBWTS} activeFacility={facilityTab} />
           )}
 
           {/* ECharts Telemetry Chart */}

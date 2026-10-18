@@ -1,10 +1,12 @@
-import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useMarineDashboardStore } from '../../stores/useMarineDashboardStore';
 import { useTelemetryStream } from '../../hooks/useTelemetryStream';
 import { dualDbSyncEngine } from '../../services/dualDbSyncEngine';
+import { accessAuditService } from '../../services/accessAuditService';
 import { RoleSwitcher } from '../Common/RoleSwitcher';
 import { ModeToggleBar } from '../Dashboard/ModeToggleBar';
+import { MaritimeAuthModal } from './MaritimeAuthModal';
 import {
   LayoutDashboard,
   MapPin,
@@ -12,6 +14,8 @@ import {
   AlertTriangle,
   Ship,
   Radio,
+  Users,
+  Lock,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -19,10 +23,12 @@ const NAV_ITEMS = [
   { path: '/gis', label: '해양 GIS 지도', icon: <MapPin size={18} /> },
   { path: '/reports', label: '선급 규제 감사', icon: <FileCheck2 size={18} /> },
   { path: '/alarms', label: '알람 전수 분석', icon: <AlertTriangle size={18} /> },
+  { path: '/audit', label: '접속 감사 & 활성 통계', icon: <Users size={18} /> },
 ];
 
 export const MarineAppShell: React.FC = () => {
   const {
+    currentUser,
     currentRole,
     setRole,
     operatingMode,
@@ -38,6 +44,19 @@ export const MarineAppShell: React.FC = () => {
     vessels,
     alarms,
   } = useMarineDashboardStore();
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const location = useLocation();
+
+  // 화면 이동 시 자동 PAGE_VIEW 감사 로그 기록 (Zero-PII)
+  useEffect(() => {
+    accessAuditService
+      .logAuditEvent({
+        actionType: 'PAGE_VIEW',
+        targetPath: location.pathname,
+      })
+      .catch(() => {});
+  }, [location.pathname]);
 
   // 10Hz GCP 센서 스트림 (AppShell 차원에서 영속 연결 유지 - 무중단 보장)
   const edgeStream = useTelemetryStream({
@@ -109,8 +128,32 @@ export const MarineAppShell: React.FC = () => {
           )}
         </div>
 
-        {/* 4대 직무 스위처 (RoleSwitcher) */}
-        <div className="flex items-center gap-2">
+        {/* Header Right: Zero-PII Auth Chip & 4대 직무 스위처 */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {currentUser && !currentUser.isAnonymousGuest ? (
+            <button
+              type="button"
+              data-testid="header-user-chip"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="flex items-center gap-2 bg-cyan-950/60 border border-marine-cyan/50 hover:bg-cyan-900/60 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-100 transition-all cursor-pointer shadow-sm"
+              title="선급 및 직무 세션 정보 확인"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-mono font-bold text-cyan-300">{currentUser.userHashId}</span>
+              <span className="hidden sm:inline text-slate-400">({currentUser.organization})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-testid="header-login-btn"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="marine-btn text-xs bg-slate-900 border border-slate-700 hover:border-marine-cyan hover:text-marine-cyan text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Lock size={14} className="text-marine-cyan" />
+              <span>선급 1-클릭 인증</span>
+            </button>
+          )}
+
           <RoleSwitcher currentRole={currentRole} onRoleChange={setRole} />
         </div>
       </header>
@@ -193,8 +236,14 @@ export const MarineAppShell: React.FC = () => {
       <footer className="hidden md:flex items-center justify-between px-4 py-1.5 bg-slate-950 border-t border-slate-800 text-[11px] text-slate-400">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${edgeStream.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-            {edgeStream.isConnected ? '10Hz GCP 센서 스트림 정상 (9.98 Hz)' : 'GCP 센서 연결 대기'}
+            <span
+              className={`w-2 h-2 rounded-full ${
+                edgeStream.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+              }`}
+            />
+            {edgeStream.isConnected
+              ? '10Hz GCP 센서 스트림 정상 (9.98 Hz)'
+              : 'GCP 센서 연결 대기'}
           </span>
           <span>선박 에지 PC: e2-micro (Ubuntu 24.04 LTS / Docker)</span>
         </div>
@@ -204,6 +253,13 @@ export const MarineAppShell: React.FC = () => {
           <span>IMO MARPOL Annex VI MEPC.340(77) 준수 관제 중</span>
         </div>
       </footer>
+
+      {/* 6. Maritime Cyber Security Auth Modal */}
+      <MaritimeAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 };
+

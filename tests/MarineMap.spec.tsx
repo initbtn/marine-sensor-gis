@@ -14,6 +14,8 @@ vi.mock('react-leaflet', () => ({
   TileLayer: () => <div data-testid="leaflet-tile-layer" />,
   Polygon: ({ children }: any) => <div data-testid="leaflet-polygon">{children}</div>,
   Polyline: () => <div data-testid="leaflet-polyline" />,
+  CircleMarker: ({ children }: any) => <div data-testid="leaflet-circle-marker">{children}</div>,
+  Tooltip: ({ children }: any) => <div data-testid="leaflet-tooltip">{children}</div>,
   Popup: ({ children }: any) => <div data-testid="leaflet-popup">{children}</div>,
   Marker: ({ eventHandlers, children, position }: any) => (
     <div

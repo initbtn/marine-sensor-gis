@@ -51,6 +51,27 @@ export const INITIAL_VESSELS: VesselInfo[] = [
   },
 ];
 
+export const DEFAULT_VESSEL_TRACKS: Record<string, { lat: number; lng: number }[]> = {
+  'VSL-001': [
+    { lat: 35.102, lng: 129.040 }, // 부산 신항 출항
+    { lat: 35.020, lng: 128.950 },
+    { lat: 34.930, lng: 128.840 },
+    { lat: 34.850, lng: 128.750 }, // 현재 위치 (거제도 남동방)
+  ],
+  'VSL-002': [
+    { lat: 1.160, lng: 103.620 },  // 말라카 해협 진입
+    { lat: 1.200, lng: 103.710 },
+    { lat: 1.230, lng: 103.790 },
+    { lat: 1.250, lng: 103.850 },  // 현재 위치 (싱가포르 동쪽)
+  ],
+  'VSL-003': [
+    { lat: 20.800, lng: 120.900 }, // 남중국해 북상
+    { lat: 20.950, lng: 121.150 },
+    { lat: 21.050, lng: 121.320 },
+    { lat: 21.150, lng: 121.500 },  // 현재 위치 (바시 해협)
+  ],
+};
+
 export function generateScrubberTelemetry(base?: Partial<ScrubberTelemetry>): ScrubberTelemetry {
   const now = new Date().toISOString();
   const soxPpm = base?.soxPpm ?? Number((12 + Math.random() * 8).toFixed(1)); // 12~20 ppm (기준 25 이하)
