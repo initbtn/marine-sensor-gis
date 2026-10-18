@@ -143,11 +143,7 @@ export const HeatmapChart: React.FC<HeatmapChartProps> = ({
 
   return (
     <div
-      className={`rounded-xl p-3 shadow-md ${className}`}
-      style={{
-        backgroundColor: MarineTheme.colors.bgCard,
-        border: `1px solid ${MarineTheme.colors.border}`,
-      }}
+      className={`rounded-xl p-3 shadow-md bg-marine-card border border-marine-border ${className}`}
       data-testid="heatmap-chart-violation"
     >
       <ReactECharts

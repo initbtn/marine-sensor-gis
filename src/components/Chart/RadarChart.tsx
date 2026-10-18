@@ -119,28 +119,14 @@ export const RadarChart: React.FC<RadarChartProps> = ({
 
   return (
     <div
-      className={`rounded-xl p-3 shadow-md ${className}`}
-      style={{
-        backgroundColor: MarineTheme.colors.bgCard,
-        border: `1px solid ${MarineTheme.colors.border}`,
-      }}
+      className={`rounded-xl p-3 shadow-md bg-marine-card border border-marine-border ${className}`}
       data-testid="radar-chart-equipment-health"
     >
       <div className="flex items-center justify-between mb-1 px-1">
-        <span
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: MarineTheme.colors.textSecondary }}
-        >
+        <span className="text-xs font-semibold uppercase tracking-wider text-marine-secondary">
           Pan-Hawk 5-Axis Health Index
         </span>
-        <span
-          className="text-xs font-bold px-2 py-0.5 rounded"
-          style={{
-            backgroundColor: 'rgba(0, 245, 212, 0.15)',
-            color: MarineTheme.colors.ecoCyan,
-            border: `1px solid rgba(0, 245, 212, 0.3)`,
-          }}
-        >
+        <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-950/30 text-emerald-400 border border-emerald-500/30">
           종합 평점: {healthScore.overallScore}점
         </span>
       </div>

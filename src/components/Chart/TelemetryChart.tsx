@@ -183,7 +183,7 @@ export const TelemetryChart: React.FC<TelemetryChartProps> = ({ facilityType, hi
   };
 
   return (
-    <div className="telemetry-chart" style={{ width: '100%', height: '360px' }} data-testid="telemetry-chart">
+    <div className="telemetry-chart w-full h-[360px]" data-testid="telemetry-chart">
       <ReactECharts
         option={getOption()}
         style={{ height: '100%', width: '100%' }}

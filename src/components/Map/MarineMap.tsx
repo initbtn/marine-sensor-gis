@@ -1,84 +1,158 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { VesselInfo } from '../../types/telemetry';
-import { MarineTheme } from '../../styles/theme';
+import { VesselInfo, Position } from '../../types/telemetry';
+import { Compass, Crosshair } from 'lucide-react';
 
-interface MarineMapProps {
-  vessels: VesselInfo[];
-  selectedVesselId: string;
-  onSelectVessel: (vesselId: string) => void;
-  trackHistory?: [number, number][];
-  showEcaZone?: boolean;
-}
-
-// 부산항 및 대한해협 연안 배출규제해역(ECA / SOx 0.1% Zone) 폴리곤 좌표 (예시)
-export const KOREA_STRAIT_ECA_ZONE: [number, number][] = [
-  [35.35, 128.95],
-  [35.25, 129.35],
-  [34.90, 129.50],
-  [34.60, 129.10],
-  [34.75, 128.50],
-  [35.05, 128.60],
-];
-
-const createVesselIcon = (headingDeg: number, status: string, isSelected: boolean) => {
-  const fillColor =
-    status === 'CRITICAL'
-      ? MarineTheme.colors.criticalCrimson
-      : status === 'WARNING'
-      ? MarineTheme.colors.warningAmber
-      : MarineTheme.colors.ecoCyan;
-
-  const strokeColor = isSelected ? '#ffffff' : 'rgba(0,0,0,0.4)';
-  const strokeWidth = isSelected ? 2.5 : 1.2;
-
-  const svgHtml = `
-    <div style="transform: rotate(${headingDeg}deg); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
-      </svg>
-    </div>
-  `;
+// Custom vessel SVG marker creator
+const createVesselIcon = (status: 'NORMAL' | 'WARNING' | 'CRITICAL', isSelected: boolean) => {
+  const colorMap = {
+    NORMAL: '#00F5D4',
+    WARNING: '#FF9F1C',
+    CRITICAL: '#E71D36',
+  };
+  const color = colorMap[status];
+  const size = isSelected ? 36 : 28;
+  const strokeColor = isSelected ? '#FFFFFF' : '#0B132B';
+  const strokeWidth = isSelected ? 3 : 1.5;
 
   return L.divIcon({
-    html: svgHtml,
     className: 'custom-vessel-marker',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    html: `
+      <div style="transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;">
+        <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6));">
+          <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+        </svg>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 };
 
+// 대한해역 배출규제해역 (ECA Zone) 예시 다각형 좌표
+const KOREA_STRAIT_ECA_ZONE: [number, number][] = [
+  [34.8, 128.5],
+  [35.4, 129.5],
+  [35.2, 130.2],
+  [34.4, 129.2],
+  [34.8, 128.5],
+];
+
+interface MapViewControllerProps {
+  selectedVessel?: VesselInfo;
+  vessels: VesselInfo[];
+  fitFleetTrigger: number;
+  focusTrigger: number;
+}
+
+/**
+ * Leaflet 동적 뷰포트 제어기 (useMap 훅 활용)
+ * - 선박 선택 시: 해당 선박 위치로 부드럽게 자동 포커싱(flyTo)
+ * - 전체 선단 보기 클릭 시: 전 선박(부산~대만~싱가포르)이 한눈에 보이는 바운드로 자동 맞춤(fitBounds)
+ */
+export const MapViewController: React.FC<MapViewControllerProps> = ({
+  selectedVessel,
+  vessels,
+  fitFleetTrigger,
+  focusTrigger,
+}) => {
+  const map = useMap();
+  const prevVesselIdRef = React.useRef<string | undefined>(selectedVessel?.id);
+
+  // 1. 선박 선택 시 자동 flyTo (선박 ID가 변경되거나 초점 트리거 발생 시)
+  React.useEffect(() => {
+    if (!selectedVessel) return;
+    map.flyTo([selectedVessel.position.lat, selectedVessel.position.lng], 8, {
+      duration: 1.2,
+    });
+    prevVesselIdRef.current = selectedVessel.id;
+  }, [selectedVessel?.id, focusTrigger, map]);
+
+  // 2. 전체 선단 한눈에 보기 (fitBounds)
+  React.useEffect(() => {
+    if (fitFleetTrigger === 0 || vessels.length === 0) return;
+    const points: [number, number][] = vessels.map((v) => [
+      v.position.lat,
+      v.position.lng,
+    ]);
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, {
+      padding: [60, 60],
+      maxZoom: 6,
+      animate: true,
+      duration: 1.2,
+    });
+  }, [fitFleetTrigger, vessels, map]);
+
+  return null;
+};
+
+export interface MarineMapProps {
+  vessels: VesselInfo[];
+  selectedVessel?: VesselInfo;
+  onSelectVessel?: (vesselId: string) => void;
+  trackHistory?: Position[];
+  showEcaZone?: boolean;
+}
+
 export const MarineMap: React.FC<MarineMapProps> = ({
   vessels,
-  selectedVesselId,
+  selectedVessel,
   onSelectVessel,
   trackHistory = [],
   showEcaZone = true,
 }) => {
-  const selectedVessel = vessels.find((v) => v.id === selectedVesselId) || vessels[0];
+  const [fitFleetTrigger, setFitFleetTrigger] = React.useState(0);
+  const [focusTrigger, setFocusTrigger] = React.useState(0);
+
   const center: [number, number] = selectedVessel
     ? [selectedVessel.position.lat, selectedVessel.position.lng]
     : [35.1, 129.04]; // Busan port default
 
   return (
     <div
-      className="marine-map-container relative rounded-xl overflow-hidden shadow-xl"
-      style={{
-        width: '100%',
-        height: '100%',
-        minHeight: '480px',
-        border: `1px solid ${MarineTheme.colors.border}`,
-        backgroundColor: MarineTheme.colors.bgPrimary,
-      }}
+      className="marine-map-container relative rounded-xl overflow-hidden shadow-xl w-full h-full min-h-[480px] border border-marine-border bg-marine-app"
       data-testid="marine-map"
     >
+      {/* 맵 상단 좌측: 선단 뷰포트 빠른 조작 컨트롤 바 */}
+      <div className="absolute top-3 left-14 z-[1000] flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setFitFleetTrigger((prev) => prev + 1)}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-md bg-slate-900/90 hover:bg-slate-800 text-marine-cyan border border-marine-border shadow-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+          data-testid="btn-fit-fleet"
+          title="모든 선박(부산~대만~싱가포르)이 한 화면에 보이도록 바운드 자동 맞춤"
+        >
+          <Compass className="w-3.5 h-3.5 text-marine-cyan" />
+          <span>전체 선단 보기</span>
+        </button>
+        {selectedVessel && (
+          <button
+            type="button"
+            onClick={() => setFocusTrigger((prev) => prev + 1)}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-md bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-marine-border shadow-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+            data-testid="btn-focus-selected"
+            title={`${selectedVessel.name} 위치로 뷰포트 이동`}
+          >
+            <Crosshair className="w-3.5 h-3.5 text-amber-400" />
+            <span>{selectedVessel.name} 추적</span>
+          </button>
+        )}
+      </div>
+
       <MapContainer
         center={center}
         zoom={7}
         scrollWheelZoom={true}
-        style={{ width: '100%', height: '100%', minHeight: '480px' }}
+        className="w-full h-full min-h-[480px]"
       >
+        <MapViewController
+          selectedVessel={selectedVessel}
+          vessels={vessels}
+          fitFleetTrigger={fitFleetTrigger}
+          focusTrigger={focusTrigger}
+        />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -89,19 +163,19 @@ export const MarineMap: React.FC<MarineMapProps> = ({
           <Polygon
             positions={KOREA_STRAIT_ECA_ZONE}
             pathOptions={{
-              color: MarineTheme.colors.warningAmber,
-              fillColor: MarineTheme.colors.warningAmber,
+              color: '#FF9F1C',
+              fillColor: '#FF9F1C',
               fillOpacity: 0.12,
               weight: 2,
               dashArray: '6, 6',
             }}
           >
             <Popup>
-              <div style={{ padding: '4px', fontSize: '12px' }}>
-                <strong style={{ color: MarineTheme.colors.warningAmber }}>
+              <div className="p-1 text-xs">
+                <strong className="text-amber-600">
                   ⚠️ IMO MARPOL ECA 배출규제해역
                 </strong>
-                <p style={{ margin: '4px 0 0 0', color: '#475569' }}>
+                <p className="mt-1 m-0 text-slate-600">
                   황 함유량 0.10% 이하 강제 (SOx ≤ 4.3 ppm / pH ≥ 6.5)
                 </p>
               </div>
@@ -112,56 +186,48 @@ export const MarineMap: React.FC<MarineMapProps> = ({
         {/* 실시간 선박 이동 항적 폴리라인 */}
         {trackHistory.length > 1 && (
           <Polyline
-            positions={trackHistory}
-            color={MarineTheme.colors.ecoCyan}
+            positions={trackHistory.map((p) => [p.lat, p.lng])}
+            color="#00F5D4"
             dashArray="4, 6"
             weight={3}
             opacity={0.85}
           />
         )}
 
-        {/* 선박 선수각 회전 마커 렌더링 */}
+        {/* 선박 위치 마커 표출 */}
         {vessels.map((vessel) => {
-          const isSelected = vessel.id === selectedVesselId;
-          const icon = createVesselIcon(vessel.headingDeg, vessel.status, isSelected);
-
+          const isSelected = selectedVessel?.id === vessel.id;
           return (
             <Marker
               key={vessel.id}
               position={[vessel.position.lat, vessel.position.lng]}
-              icon={icon}
+              icon={createVesselIcon(vessel.status, isSelected)}
               eventHandlers={{
-                click: () => onSelectVessel(vessel.id),
+                click: () => onSelectVessel?.(vessel.id),
               }}
             >
               <Popup>
-                <div style={{ padding: '4px', fontSize: '13px', color: '#1e293b' }}>
+                <div className="p-1 text-xs text-slate-800">
                   <div className="font-bold text-sm text-slate-900">{vessel.name}</div>
-                  <div style={{ color: '#64748b', margin: '2px 0', fontSize: '11px' }}>
+                  <div className="text-slate-500 my-0.5 text-[11px]">
                     IMO: {vessel.imoNumber} | {vessel.vesselType}
                   </div>
-                  <div style={{ margin: '4px 0' }}>
+                  <div className="my-1">
                     속력: <strong>{vessel.speedKts} kts</strong> | 침로: <strong>{vessel.headingDeg}°</strong>
                   </div>
                   <div>
                     목적지: <strong>{vessel.destination}</strong> (ETA: {vessel.eta})
                   </div>
-                  <div style={{ marginTop: '6px' }}>
+                  <div className="mt-1.5">
                     상태:{' '}
                     <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        color: '#fff',
-                        backgroundColor:
-                          vessel.status === 'CRITICAL'
-                            ? MarineTheme.colors.criticalCrimson
-                            : vessel.status === 'WARNING'
-                            ? MarineTheme.colors.warningAmber
-                            : '#059669',
-                      }}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold text-white ${
+                        vessel.status === 'CRITICAL'
+                          ? 'bg-rose-600'
+                          : vessel.status === 'WARNING'
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-600'
+                      }`}
                     >
                       {vessel.status}
                     </span>
@@ -175,36 +241,25 @@ export const MarineMap: React.FC<MarineMapProps> = ({
 
       {/* 지도 우상단 범례 (Map Legend Overlay) */}
       <div
-        className="absolute top-3 right-3 z-[1000] p-2.5 rounded-lg text-xs shadow-lg flex flex-col gap-1.5 backdrop-blur-md"
-        style={{
-          backgroundColor: 'rgba(11, 19, 43, 0.85)',
-          border: `1px solid ${MarineTheme.colors.border}`,
-          color: MarineTheme.colors.textSecondary,
-        }}
+        className="absolute top-3 right-3 z-[1000] p-2.5 rounded-lg text-xs shadow-lg flex flex-col gap-1.5 backdrop-blur-md bg-slate-900/85 border border-marine-border text-marine-secondary"
       >
         <span className="font-bold text-white text-[11px] mb-0.5">범례 (Legend)</span>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MarineTheme.colors.ecoCyan }} />
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           <span>정상 가동 선박</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MarineTheme.colors.warningAmber }} />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
           <span>경보 / 주의 선박</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MarineTheme.colors.criticalCrimson }} />
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
           <span>규제 초과 선박</span>
         </div>
         {showEcaZone && (
           <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
-            <span
-              className="w-3 h-2 rounded border border-dashed"
-              style={{
-                borderColor: MarineTheme.colors.warningAmber,
-                backgroundColor: 'rgba(255, 159, 28, 0.3)',
-              }}
-            />
-            <span style={{ color: MarineTheme.colors.warningAmber }}>ECA 규제해역 (0.1% S)</span>
+            <span className="w-3 h-2 rounded border border-dashed border-amber-400 bg-amber-400/30" />
+            <span className="text-amber-400">ECA 규제해역 (0.1% S)</span>
           </div>
         )}
       </div>

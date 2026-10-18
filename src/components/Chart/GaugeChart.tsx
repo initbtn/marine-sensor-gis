@@ -132,29 +132,15 @@ export const GaugeChart: React.FC<GaugeChartProps> = ({
 
   return (
     <div
-      className={`rounded-xl p-3 flex flex-col justify-between shadow-md ${className}`}
-      style={{
-        backgroundColor: MarineTheme.colors.bgCard,
-        border: `1px solid ${MarineTheme.colors.border}`,
-      }}
+      className={`rounded-xl p-3 flex flex-col justify-between shadow-md bg-marine-card border border-marine-border ${className}`}
       data-testid={`gauge-chart-${title.replace(/\s+/g, '-').toLowerCase()}`}
     >
       <div className="flex items-center justify-between px-1">
-        <span
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: MarineTheme.colors.textPrimary }}
-        >
+        <span className="text-xs font-semibold uppercase tracking-wider text-marine-primary">
           {title}
         </span>
         {thresholdLabel && (
-          <span
-            className="text-[11px] font-medium px-2 py-0.5 rounded"
-            style={{
-              backgroundColor: 'rgba(255, 159, 28, 0.15)',
-              color: MarineTheme.colors.warningAmber,
-              border: `1px solid rgba(255, 159, 28, 0.3)`,
-            }}
-          >
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-950/30 text-amber-400 border border-amber-500/30">
             {thresholdLabel}
           </span>
         )}

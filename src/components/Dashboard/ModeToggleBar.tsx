@@ -13,6 +13,7 @@ export interface ModeToggleBarProps {
   onToggleOperatingMode: (mode: OperatingMode) => void;
   onToggleNetworkStatus: () => void;
   onManualFlush: () => void;
+  className?: string;
 }
 
 export const ModeToggleBar: React.FC<ModeToggleBarProps> = ({
@@ -23,105 +24,64 @@ export const ModeToggleBar: React.FC<ModeToggleBarProps> = ({
   onToggleOperatingMode,
   onToggleNetworkStatus,
   onManualFlush,
+  className = '',
 }) => {
   return (
     <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        background: '#0f172a',
-        padding: '10px 16px',
-        borderRadius: '8px',
-        border: '1px solid #1e293b',
-        color: '#f8fafc',
-        marginBottom: '16px',
-      }}
+      className={`flex items-center justify-between flex-wrap gap-3 bg-slate-900/90 p-2.5 md:px-4 rounded-lg border border-slate-800 text-slate-100 ${className}`}
     >
       {/* 1. 선박 에지 ⇄ 내륙 클라우드 2원화 모드 토글 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500 }}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-slate-400 font-medium">
           관제 모드:
         </span>
-        <div
-          style={{
-            display: 'inline-flex',
-            borderRadius: '6px',
-            background: '#1e293b',
-            padding: '3px',
-          }}
-        >
+        <div className="inline-flex rounded-md bg-slate-800 p-0.5 border border-slate-700/60">
           <button
             type="button"
             onClick={() => onToggleOperatingMode('EDGE')}
-            style={{
-              padding: '6px 14px',
-              fontSize: '13px',
-              fontWeight: 600,
-              borderRadius: '4px',
-              border: 'none',
-              cursor: 'pointer',
-              background: operatingMode === 'EDGE' ? '#0284c7' : 'transparent',
-              color: operatingMode === 'EDGE' ? '#ffffff' : '#94a3b8',
-              transition: 'background 0.15s ease',
-            }}
+            className={`px-3 py-1.5 text-xs font-semibold rounded min-h-[38px] transition-all cursor-pointer ${
+              operatingMode === 'EDGE'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
           >
             🚢 선박 로컬 에지
           </button>
           <button
             type="button"
             onClick={() => onToggleOperatingMode('CLOUD')}
-            style={{
-              padding: '6px 14px',
-              fontSize: '13px',
-              fontWeight: 600,
-              borderRadius: '4px',
-              border: 'none',
-              cursor: 'pointer',
-              background: operatingMode === 'CLOUD' ? '#0d9488' : 'transparent',
-              color: operatingMode === 'CLOUD' ? '#ffffff' : '#94a3b8',
-              transition: 'background 0.15s ease',
-            }}
+            className={`px-3 py-1.5 text-xs font-semibold rounded min-h-[38px] transition-all cursor-pointer ${
+              operatingMode === 'CLOUD'
+                ? 'bg-teal-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
           >
             🏢 내륙 클라우드
           </button>
         </div>
         <span
-          style={{
-            fontSize: '11px',
-            color: operatingMode === 'EDGE' ? '#38bdf8' : '#2dd4bf',
-            background: operatingMode === 'EDGE' ? 'rgba(2, 132, 199, 0.15)' : 'rgba(13, 148, 136, 0.15)',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            border: `1px solid ${operatingMode === 'EDGE' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(45, 212, 191, 0.3)'}`,
-          }}
+          className={`text-[11px] font-medium px-2 py-0.5 rounded border ${
+            operatingMode === 'EDGE'
+              ? 'text-sky-400 bg-sky-950/40 border-sky-500/30'
+              : 'text-teal-400 bg-teal-950/40 border-teal-500/30'
+          }`}
         >
           {operatingMode === 'EDGE' ? '0ms 무지연 10Hz Raw 센서' : '1분/1시간 통계 집계 & 규제 이력'}
         </span>
       </div>
 
       {/* 2. 위성 통신 시뮬레이터 & 동기화 큐 인디케이터 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="flex items-center gap-3 flex-wrap">
         {/* 위성 네트워크 상태 토글 */}
         <button
           type="button"
           data-testid="network-toggle-btn"
           onClick={onToggleNetworkStatus}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            border: `1px solid ${networkStatus === 'ONLINE' ? '#16a34a' : '#dc2626'}`,
-            background: networkStatus === 'ONLINE' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(220, 38, 38, 0.15)',
-            color: networkStatus === 'ONLINE' ? '#4ade80' : '#f87171',
-            cursor: 'pointer',
-          }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold min-h-[38px] border transition-all cursor-pointer ${
+            networkStatus === 'ONLINE'
+              ? 'border-emerald-500/50 bg-emerald-950/30 text-emerald-400 hover:bg-emerald-950/50'
+              : 'border-rose-500/60 bg-rose-950/30 text-rose-400 hover:bg-rose-950/50'
+          }`}
         >
           {networkStatus === 'ONLINE' ? (
             <>
@@ -135,30 +95,15 @@ export const ModeToggleBar: React.FC<ModeToggleBarProps> = ({
         </button>
 
         {/* Store-and-Forward 대기 큐 인디케이터 */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            background: '#1e293b',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid #334155',
-          }}
-        >
-          <Database size={14} color="#94a3b8" />
-          <span style={{ color: '#94a3b8' }}>대기 큐:</span>
+        <div className="flex items-center gap-1.5 text-xs bg-slate-800 px-3 py-1.5 rounded-md border border-slate-700">
+          <Database size={14} className="text-slate-400" />
+          <span className="text-slate-400">대기 큐:</span>
           <span
-            style={{
-              fontWeight: 700,
-              padding: '1px 6px',
-              borderRadius: '10px',
-              fontSize: '11px',
-              background: pendingCount > 0 ? 'rgba(234, 179, 8, 0.2)' : 'rgba(148, 163, 184, 0.2)',
-              color: pendingCount > 0 ? '#facc15' : '#94a3b8',
-              border: `1px solid ${pendingCount > 0 ? 'rgba(250, 204, 21, 0.4)' : '#475569'}`,
-            }}
+            className={`font-bold px-1.5 py-0.5 rounded-full text-[11px] border ${
+              pendingCount > 0
+                ? 'bg-amber-950/40 text-amber-400 border-amber-500/40 animate-pulse'
+                : 'bg-slate-700/40 text-slate-400 border-slate-600/40'
+            }`}
           >
             {pendingCount}건 대기
           </span>
@@ -169,22 +114,9 @@ export const ModeToggleBar: React.FC<ModeToggleBarProps> = ({
           type="button"
           onClick={onManualFlush}
           disabled={syncStatus === 'SYNCING' || networkStatus === 'OFFLINE'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 600,
-            border: '1px solid #0284c7',
-            background: syncStatus === 'SYNCING' ? '#0369a1' : '#0284c7',
-            color: '#ffffff',
-            cursor: syncStatus === 'SYNCING' || networkStatus === 'OFFLINE' ? 'not-allowed' : 'pointer',
-            opacity: syncStatus === 'SYNCING' || networkStatus === 'OFFLINE' ? 0.6 : 1,
-          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold min-h-[38px] border border-sky-600 bg-sky-600 hover:bg-sky-500 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <RefreshCw size={13} />
+          <RefreshCw size={13} className={syncStatus === 'SYNCING' ? 'animate-spin' : ''} />
           {syncStatus === 'SYNCING' ? '동기화 중...' : '즉시 동기화 (Flush)'}
         </button>
       </div>
