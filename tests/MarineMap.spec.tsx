@@ -139,4 +139,31 @@ describe('MarineMap & MapViewController GIS Navigation Tests', () => {
     // 스토어 상태 변경 확인
     expect(useMarineDashboardStore.getState().selectedVesselId).toBe('VSL-002');
   });
+
+  it('모바일 반응형: 범례 토글 버튼(btn-toggle-legend)이 렌더링되고 클릭 시 접힘/펼침 상태가 전환되어야 한다', () => {
+    render(
+      <MarineMap
+        vessels={INITIAL_VESSELS}
+        selectedVessel={INITIAL_VESSELS[0]}
+      />
+    );
+
+    const toggleBtn = screen.getByTestId('btn-toggle-legend');
+    expect(toggleBtn).toBeInTheDocument();
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+
+    const legendPanel = screen.getByTestId('marine-map-legend');
+    expect(legendPanel.className).toContain('hidden');
+
+    // 토글 버튼 클릭 -> 펼침
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
+    expect(legendPanel.className).not.toContain('hidden');
+
+    // 닫기 버튼 클릭 -> 다시 접힘
+    const closeBtn = screen.getByLabelText('범례 닫기');
+    fireEvent.click(closeBtn);
+    expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+    expect(legendPanel.className).toContain('hidden');
+  });
 });

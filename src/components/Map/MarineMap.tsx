@@ -13,7 +13,7 @@ import {
 import L from 'leaflet';
 import { VesselInfo, Position } from '../../types/telemetry';
 import { DEFAULT_VESSEL_TRACKS, getCompassDirection16 } from '../../services/mockTelemetry';
-import { Compass, Crosshair } from 'lucide-react';
+import { Compass, Crosshair, Layers } from 'lucide-react';
 
 // Custom vessel SVG marker creator with heading rotation (IEC 62288)
 const createVesselIcon = (
@@ -121,6 +121,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
 }) => {
   const [fitFleetTrigger, setFitFleetTrigger] = React.useState(0);
   const [focusTrigger, setFocusTrigger] = React.useState(0);
+  const [isLegendOpen, setIsLegendOpen] = React.useState(false);
 
   const center: [number, number] = selectedVessel
     ? [selectedVessel.position.lat, selectedVessel.position.lng]
@@ -317,37 +318,67 @@ export const MarineMap: React.FC<MarineMapProps> = ({
         })}
       </MapContainer>
 
-      {/* 지도 우상단 범례 (Map Legend Overlay) */}
-      <div
-        className="absolute top-3 right-3 z-[1000] p-2.5 rounded-lg text-xs shadow-lg flex flex-col gap-1.5 backdrop-blur-md bg-slate-900/85 border border-marine-border text-marine-secondary"
-      >
-        <span className="font-bold text-white text-[11px] mb-0.5">범례 (Legend)</span>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          <span>정상 가동 선박</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-          <span>경보 / 주의 선박</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-          <span>규제 초과 선박</span>
-        </div>
-        <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
-          <span className="w-3 h-0.5 bg-marine-cyan" />
-          <span className="text-marine-cyan">선박 침로 벡터 (Heading)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-0.5 border-t border-dashed border-marine-cyan" />
-          <span className="text-marine-cyan">운항 항적 (Track)</span>
-        </div>
-        {showEcaZone && (
-          <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
-            <span className="w-3 h-2 rounded border border-dashed border-amber-400 bg-amber-400/30" />
-            <span className="text-amber-400">ECA 규제해역 (0.1% S)</span>
+      {/* 지도 우상단 범례 (Map Legend Overlay: 모바일 접이식 토글 & 데스크톱 상시 표출) */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-1.5">
+        {/* 모바일 전용 토글 버튼 (>= 44px 터치 타깃 준수) */}
+        <button
+          type="button"
+          onClick={() => setIsLegendOpen((prev) => !prev)}
+          className="md:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold backdrop-blur-md bg-slate-900/90 hover:bg-slate-800 text-marine-cyan border border-marine-border shadow-lg cursor-pointer transition-colors min-h-[44px]"
+          data-testid="btn-toggle-legend"
+          aria-expanded={isLegendOpen}
+          title="지도 범례 토글"
+        >
+          <Layers className="w-4 h-4 text-marine-cyan" />
+          <span>범례</span>
+          <span className="text-[10px] text-marine-secondary">{isLegendOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {/* 범례 본문 패널: 모바일에서는 isLegendOpen 시 표출, md: 이상에서는 상시 표출 */}
+        <div
+          className={`p-2 md:p-2.5 rounded-lg text-[11px] md:text-xs shadow-lg flex-col gap-1.5 backdrop-blur-md bg-slate-900/90 border border-marine-border text-marine-secondary transition-all ${
+            isLegendOpen ? 'flex' : 'hidden md:flex'
+          }`}
+          data-testid="marine-map-legend"
+        >
+          <div className="flex items-center justify-between gap-3 mb-0.5">
+            <span className="font-bold text-white text-[11px]">범례 (Legend)</span>
+            <button
+              type="button"
+              onClick={() => setIsLegendOpen(false)}
+              className="md:hidden text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded cursor-pointer"
+              aria-label="범례 닫기"
+            >
+              ✕
+            </button>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            <span>정상 가동 선박</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+            <span>경보 / 주의 선박</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <span>규제 초과 선박</span>
+          </div>
+          <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+            <span className="w-3 h-0.5 bg-marine-cyan" />
+            <span className="text-marine-cyan">선박 침로 벡터 (Heading)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-0.5 border-t border-dashed border-marine-cyan" />
+            <span className="text-marine-cyan">운항 항적 (Track)</span>
+          </div>
+          {showEcaZone && (
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+              <span className="w-3 h-2 rounded border border-dashed border-amber-400 bg-amber-400/30" />
+              <span className="text-amber-400">ECA 규제해역 (0.1% S)</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
