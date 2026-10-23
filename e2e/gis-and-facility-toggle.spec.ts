@@ -54,7 +54,8 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     const markerHtml = await vesselMarkers.first().innerHTML();
     expect(markerHtml).toContain('rotate(');
 
-    // 3. 지도 우상단 범례에 침로 벡터 및 운항 항적 항목 표출 검증
+    // 3. 지도 우상단 범례에 침로 벡터 및 운항 항적 항목 표출 검증 (데스크톱에서는 토글 버튼 숨김)
+    await expect(page.locator('[data-testid="btn-toggle-legend"]')).not.toBeVisible();
     await expect(page.locator('text=선박 침로 벡터 (Heading)')).toBeVisible();
     await expect(page.locator('text=운항 항적 (Track)')).toBeVisible();
 
@@ -78,5 +79,29 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     await expect(vesselTooltip.first()).toBeVisible();
     await expect(vesselTooltip.first()).toContainText('PANAMAX PIONEER');
     await expect(vesselTooltip.first()).toContainText('215° SW');
+  });
+
+  test('모바일 뷰포트: 지도 범례가 기본 접힘 상태이고, 토글 버튼 클릭 시 정상 표출/닫힘 동작해야 한다', async ({ page }) => {
+    // 모바일 뷰포트 설정 (iPhone SE: 375 x 667)
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+
+    const toggleBtn = page.locator('[data-testid="btn-toggle-legend"]');
+    const legendPanel = page.locator('[data-testid="marine-map-legend"]');
+
+    // 1. 모바일에서는 토글 버튼이 보이고, 범례 본문은 기본 숨김(hidden)이어야 한다
+    await expect(toggleBtn).toBeVisible();
+    await expect(legendPanel).not.toBeVisible();
+
+    // 2. 토글 버튼 클릭 시 범례 본문이 나타나야 한다
+    await toggleBtn.click();
+    await expect(legendPanel).toBeVisible();
+    await expect(page.locator('text=정상 가동 선박')).toBeVisible();
+
+    // 3. 닫기 버튼 클릭 시 다시 숨겨져야 한다
+    const closeBtn = page.locator('button[aria-label="범례 닫기"]');
+    await expect(closeBtn).toBeVisible();
+    await closeBtn.click();
+    await expect(legendPanel).not.toBeVisible();
   });
 });
