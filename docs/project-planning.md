@@ -72,6 +72,7 @@
 | **Sprint 4** | **4대 직무 대시보드 조립 & 원격 제어** | • 기관사/관제사/감사관/진단원 4대 대시보드 통합<br>• Vercel 엣지 프록시(`/api/edge`) 다운링크 연결<br>• 비상 바이패스 밸브 및 위성 단절 인터랙티브 시연<br>• 텔레그램 실시간 장애 알림 연동 | **COMPLETED** (PR #10) |
 | **Sprint 5** | **해양 디자인 시스템(MDS) 구축 & App Shell 라우터 아키텍처 및 순수 함수(SOLID) 리팩터링** | • 토스(TDS)/당근(Seed Design) 기반 3계층(Primitive/Semantic/Component) 디자인 토큰 체계<br>• 영속 App Shell(`MarineAppShell`) & 라우터 Outlet 구조 (10Hz 스트림 무중단 영속화)<br>• 데스크톱 상단 탭 ↔ 모바일 하단 바텀 네비게이션($\ge 44\text{px}$ 터치 타깃)<br>• Zustand 기반 고빈도 텔레메트리(`useTelemetryStore`) & 대시보드 상태(`useMarineDashboardStore`) 분리<br>• 순수 함수 컴포넌트(`React.memo`) & 4대 직무 시각화 매트릭스 완결 (`HeatmapChart`, `RadarChart`)<br>• 전 UI 컴포넌트 인라인 스타일 완전 제거 (`style={{ ... }}` 0개 달성)<br>• 해양 GIS 지도 동적 뷰포트 이동(`flyTo`) 및 전 선단 맞춤(`fitBounds`) | **COMPLETED** (PR #13) |
 | **Sprint 6** | **Zero-PII 식별자 인증 & 실시간 활성 유저 통계 감사 및 R2 아카이빙** | • 개인정보(PII) 미수집/미저장 원칙 및 비가역 단방향 해시 식별자(`usr_****`) 세션 발급<br>• 실시간 동시 접속자 수 & 당일 DAU 통계 집계 및 직무별 분포 대시보드<br>• 식별자 기반 접속 감사 트레일 (`marine_control.access_audit_logs`) 구축<br>• 비상 바이패스 및 알람 인지 액션 감사 로그 자동 기록<br>• 24개월 선급 법정 데이터 Cloudflare R2 Parquet 압축 아카이브 & PDF 감사 보고서 연계<br>• GIS 침로 회전/항적 표출 및 평형수 탭 전환 결함 해결<br>• 종합 2-Tier 테스트(Vitest 82건 & Playwright E2E 10건) 완결 | **COMPLETED** (PR #15) |
+| **Sprint 7** | **실시간 선박 항행 데드레커닝 시뮬레이션 & 동적 침로(COG/HDG) 16방위 연동** | • 선박 속력/방위 기반 위도/경도 실시간 항행 전진 계산 (`calculateDeadReckoningPosition`)<br>• 0~360° 방위각 16방위 나침반 라벨 변환 (`getCompassDirection16`)<br>• 스토어 선박 위치 전진 및 항적 실시간 누적 (최대 50포인트 링 버퍼)<br>• 대시보드 헤더 및 지도 마커 상단 영구 툴팁(`[215° SW]`) 침로 표출<br>• 종합 2-Tier 테스트(Vitest 89건 & Playwright E2E 11건) 완결 | **COMPLETED** (PR #17) |
 
 ---
 
@@ -94,4 +95,27 @@
    - Tier 1: Vitest 16개 파일 82/82개 단위 테스트 100% 통과
    - Tier 2: Playwright E2E 4개 파일 10/10개 브라우저 테스트 100% 통과
    - PR #15 `main` 브랜치 Squash 머지 (`e24aafc`) 및 GitHub Actions CI 성공 통과
+
+---
+
+## 8. Sprint 7 완료 내역 (Navigation Simulation & Dynamic COG/HDG Orientation)
+
+1. **실시간 선박 항행 데드레커닝(Dead Reckoning) 계산 엔진 (`mockTelemetry.ts`)**:
+   - 선박 속력(`speedKts`)과 방위각(`headingDeg`)을 바탕으로 경과 시간(`deltaSeconds`)에 따른 위도/경도 이동을 실시간 산출
+   - 위도에 따른 경도 수렴 보정(`cos(lat)`) 및 극지방 예외 방지 수식 엄격 적용
+2. **0~360° 방위각 16방위 변환기 (`getCompassDirection16`)**:
+   - 각도를 16방위 나침반 라벨(N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW)로 자동 변환 (음수 및 360° 초과 정규화)
+3. **전역 스토어 상태 관리 및 항적(Track) 실시간 누적 (`useMarineDashboardStore.ts`)**:
+   - `advanceVesselPositions(deltaSeconds)` 액션을 통해 전 선박 위치를 전진시키고 이동 궤적을 항적 배열에 실시간 `push`
+   - 장기 세션 메모리 누수 방지를 위해 선박당 최대 50개 좌표 링 버퍼(`slice(-50)`) 유지
+4. **HMI 대시보드 및 해양 GIS 지도 상 침로/방위 동적 연동**:
+   - `SensorDashboard.tsx`: 5초 주기 시뮬레이션 타이머에서 선박 위치 및 항적 갱신 트리거
+   - `SensorDashboardView.tsx`: 상단 헤더에 `좌표` 및 `침로: 215° SW (18.4 kts)` 고대비 시각화
+   - `MarineMap.tsx`: 선박 마커 상단에 `[215° SW]` 영구 툴팁(`permanent`) 렌더링, 팝업 침로 표기, 동적 항적 폴리라인 렌더링
+   - `FullGisPage.tsx`: 전체 GIS 화면에 동적 `trackHistories` 연동
+5. **2-Tier 종합 검증 완결**:
+   - Tier 1: Vitest 17개 파일 89/89개 단위 테스트 100% 통과 (신규 `vesselNavigation.spec.ts` 7건 포함)
+   - Tier 2: Playwright E2E 4개 파일 11/11개 브라우저 테스트 100% 통과 (신규 침로 방위 E2E 포함)
+   - PR #17 `main` 브랜치 Squash 머지 (`a7c7882`) 및 GitHub Actions CI 성공 통과
+
 
