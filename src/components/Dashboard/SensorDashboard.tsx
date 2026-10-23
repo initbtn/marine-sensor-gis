@@ -39,6 +39,8 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
     isStreaming,
     setIsStreaming,
     vessels,
+    trackHistories,
+    advanceVesselPositions,
     alarms,
     setAlarms,
     acknowledgeAlarm,
@@ -74,6 +76,7 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
     if (!isStreaming) return;
 
     const interval = setInterval(async () => {
+      advanceVesselPositions(5);
       const nextScrubber = generateScrubberTelemetry();
       const nextBWTS = generateBWTSTelemetry();
       const now = new Date().toISOString();
@@ -271,6 +274,7 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
         vessels={vessels}
         selectedVessel={selectedVessel}
         onSelectVessel={setSelectedVesselId}
+        trackHistory={selectedVessel ? trackHistories[selectedVessel.id] : undefined}
         facilityTab={facilityTab}
         onTabChange={setFacilityTab}
         currentRole={currentRole}

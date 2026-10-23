@@ -3,7 +3,7 @@ import { MarineMap } from '../Map/MarineMap';
 import { useMarineDashboardStore } from '../../stores/useMarineDashboardStore';
 
 export const FullGisPage: React.FC = () => {
-  const { vessels, selectedVesselId, setSelectedVesselId } = useMarineDashboardStore();
+  const { vessels, selectedVesselId, setSelectedVesselId, trackHistories } = useMarineDashboardStore();
   const selectedVessel = vessels.find((v) => v.id === selectedVesselId) || vessels[0];
 
   return (
@@ -21,7 +21,7 @@ export const FullGisPage: React.FC = () => {
             )}
           </div>
           <span className="text-xs text-marine-secondary">
-            AIS 실시간 스트림 연결 중 ({vessels.length}척 활성)
+            선박 위치 및 침로 실시간 데드레커닝 연동 중 ({vessels.length}척 활성)
           </span>
         </div>
         <div className="rounded-lg overflow-hidden border border-slate-700/60 h-[calc(100vh-250px)] min-h-[500px]">
@@ -29,6 +29,7 @@ export const FullGisPage: React.FC = () => {
             vessels={vessels}
             selectedVessel={selectedVessel}
             onSelectVessel={setSelectedVesselId}
+            trackHistory={selectedVessel ? trackHistories[selectedVessel.id] : undefined}
           />
         </div>
       </div>

@@ -62,4 +62,21 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     const svgPaths = page.locator('.leaflet-pane svg path');
     expect(await svgPaths.count()).toBeGreaterThanOrEqual(2);
   });
+
+  test('실시간 데드레커닝 항행: 선박 침로(215° SW) 및 방위 텍스트가 대시보드와 마커 툴팁에 동적으로 표출되어야 한다', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. 대시보드 좌측 상단 지도 헤더에 선박 좌표 및 침로 방위 텍스트 노출 검증
+    const headingIndicator = page.locator('text=/침로: \\d+° [A-Z]+/');
+    await expect(headingIndicator.first()).toBeVisible();
+
+    // 초기 선박 VSL-001 (215° SW) 표기 확인
+    await expect(page.locator('text=/215° SW/').first()).toBeVisible();
+
+    // 2. Leaflet 맵 마커 상단 툴팁에 선박명과 방위 각도 텍스트가 포함되어 있는지 검증
+    const vesselTooltip = page.locator('.leaflet-tooltip');
+    await expect(vesselTooltip.first()).toBeVisible();
+    await expect(vesselTooltip.first()).toContainText('PANAMAX PIONEER');
+    await expect(vesselTooltip.first()).toContainText('215° SW');
+  });
 });
