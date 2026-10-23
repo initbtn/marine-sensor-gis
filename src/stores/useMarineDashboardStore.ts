@@ -3,9 +3,14 @@ import {
   VesselInfo,
   AlarmEvent,
   UserRole,
+  Position,
 } from '../types/telemetry';
 import { MaritimeUser } from '../types/auth';
-import { INITIAL_VESSELS } from '../services/mockTelemetry';
+import {
+  INITIAL_VESSELS,
+  DEFAULT_VESSEL_TRACKS,
+  calculateDeadReckoningPosition,
+} from '../services/mockTelemetry';
 import { OperatingMode, NetworkStatus, SyncState } from '../components/Dashboard/ModeToggleBar';
 import { dualDbSyncEngine } from '../services/dualDbSyncEngine';
 import { maritimeAuthService } from '../services/maritimeAuthService';
@@ -22,6 +27,7 @@ export interface MarineDashboardState {
   facilityTab: 'SCRUBBER' | 'BWTS';
   isStreaming: boolean;
   vessels: VesselInfo[];
+  trackHistories: Record<string, Position[]>;
   alarms: AlarmEvent[];
 
   // Actions
@@ -37,6 +43,8 @@ export interface MarineDashboardState {
   setFacilityTab: (tab: 'SCRUBBER' | 'BWTS') => void;
   setIsStreaming: (streaming: boolean) => void;
   setVessels: (vessels: VesselInfo[]) => void;
+  setTrackHistories: (histories: Record<string, Position[]>) => void;
+  advanceVesselPositions: (deltaSeconds?: number) => void;
   setAlarms: (alarms: AlarmEvent[]) => void;
   acknowledgeAlarm: (alarmId: string) => void;
   reset: () => void;
@@ -55,6 +63,7 @@ const initialState = {
   facilityTab: 'SCRUBBER' as 'SCRUBBER' | 'BWTS',
   isStreaming: true,
   vessels: INITIAL_VESSELS,
+  trackHistories: JSON.parse(JSON.stringify(DEFAULT_VESSEL_TRACKS)) as Record<string, Position[]>,
   alarms: [] as AlarmEvent[],
 };
 
@@ -129,6 +138,31 @@ export const useMarineDashboardStore = create<MarineDashboardState>((set, get) =
   setFacilityTab: (tab) => set({ facilityTab: tab }),
   setIsStreaming: (streaming) => set({ isStreaming: streaming }),
   setVessels: (vessels) => set({ vessels }),
+  setTrackHistories: (histories) => set({ trackHistories: histories }),
+  advanceVesselPositions: (deltaSeconds = 5) => {
+    set((state) => {
+      const nextVessels = state.vessels.map((v) => {
+        const result = calculateDeadReckoningPosition(v, deltaSeconds);
+        return {
+          ...v,
+          position: result.position,
+          headingDeg: result.headingDeg,
+        };
+      });
+
+      const nextTrackHistories = { ...state.trackHistories };
+      for (const v of nextVessels) {
+        const history = nextTrackHistories[v.id] ? [...nextTrackHistories[v.id]] : [];
+        history.push(v.position);
+        nextTrackHistories[v.id] = history.slice(-50);
+      }
+
+      return {
+        vessels: nextVessels,
+        trackHistories: nextTrackHistories,
+      };
+    });
+  },
   setAlarms: (alarms) => set({ alarms }),
   acknowledgeAlarm: (alarmId) => {
     set((state) => ({
@@ -144,6 +178,7 @@ export const useMarineDashboardStore = create<MarineDashboardState>((set, get) =
   reset: () =>
     set({
       ...initialState,
+      trackHistories: JSON.parse(JSON.stringify(DEFAULT_VESSEL_TRACKS)) as Record<string, Position[]>,
       currentUser: maritimeAuthService.getCurrentUser(),
       pendingCount: dualDbSyncEngine.getQueueLength(),
     }),

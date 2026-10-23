@@ -12,7 +12,7 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import { VesselInfo, Position } from '../../types/telemetry';
-import { DEFAULT_VESSEL_TRACKS } from '../../services/mockTelemetry';
+import { DEFAULT_VESSEL_TRACKS, getCompassDirection16 } from '../../services/mockTelemetry';
 import { Compass, Crosshair } from 'lucide-react';
 
 // Custom vessel SVG marker creator with heading rotation (IEC 62288)
@@ -273,6 +273,14 @@ export const MarineMap: React.FC<MarineMapProps> = ({
                 click: () => onSelectVessel?.(vessel.id),
               }}
             >
+              <Tooltip direction="top" offset={[0, -14]} opacity={0.92} permanent>
+                <div className="text-[11px] font-semibold text-slate-900 flex items-center gap-1">
+                  <span>{vessel.name}</span>
+                  <span className="text-cyan-700 font-bold">
+                    [{vessel.headingDeg}° {getCompassDirection16(vessel.headingDeg)}]
+                  </span>
+                </div>
+              </Tooltip>
               <Popup>
                 <div className="p-1 text-xs text-slate-800">
                   <div className="font-bold text-sm text-slate-900">{vessel.name}</div>
@@ -280,7 +288,10 @@ export const MarineMap: React.FC<MarineMapProps> = ({
                     IMO: {vessel.imoNumber} | {vessel.vesselType}
                   </div>
                   <div className="my-1">
-                    속력: <strong>{vessel.speedKts} kts</strong> | 침로: <strong>{vessel.headingDeg}°</strong>
+                    속력: <strong>{vessel.speedKts} kts</strong> | 침로:{' '}
+                    <strong>
+                      {vessel.headingDeg}° {getCompassDirection16(vessel.headingDeg)}
+                    </strong>
                   </div>
                   <div>
                     목적지: <strong>{vessel.destination}</strong> (ETA: {vessel.eta})

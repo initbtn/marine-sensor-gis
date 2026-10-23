@@ -72,6 +72,60 @@ export const DEFAULT_VESSEL_TRACKS: Record<string, { lat: number; lng: number }[
   ],
 };
 
+export const COMPASS_DIRECTIONS_16 = [
+  'N', 'NNE', 'NE', 'ENE',
+  'E', 'ESE', 'SE', 'SSE',
+  'S', 'SSW', 'SW', 'WSW',
+  'W', 'WNW', 'NW', 'NNW',
+] as const;
+
+/**
+ * Converts heading degrees (0~360) to 16 cardinal compass directions
+ */
+export function getCompassDirection16(headingDeg: number): string {
+  const normalized = ((headingDeg % 360) + 360) % 360;
+  const index = Math.floor(((normalized + 11.25) % 360) / 22.5);
+  return COMPASS_DIRECTIONS_16[index];
+}
+
+export interface DeadReckoningResult {
+  position: { lat: number; lng: number };
+  headingDeg: number;
+  compassDirection: string;
+}
+
+/**
+ * Calculates new vessel coordinates based on dead reckoning (speed, heading, elapsed time)
+ */
+export function calculateDeadReckoningPosition(
+  vessel: VesselInfo,
+  deltaSeconds: number = 5,
+  simulationSpeedMultiplier: number = 1.0
+): DeadReckoningResult {
+  const headingRad = (vessel.headingDeg * Math.PI) / 180;
+  // 1 knot = 1 nautical mile / hour = 1/3600 nm/s
+  // 1 nautical mile = 1 minute of latitude = 1/60 degrees latitude
+  const distanceNm = (vessel.speedKts * (deltaSeconds / 3600)) * simulationSpeedMultiplier;
+
+  // Delta latitude in degrees
+  const dLat = (distanceNm * Math.cos(headingRad)) / 60;
+
+  // Delta longitude in degrees (compensated for latitude convergence)
+  const avgLatRad = (vessel.position.lat * Math.PI) / 180;
+  const cosLat = Math.cos(avgLatRad);
+  const dLng = (distanceNm * Math.sin(headingRad)) / (60 * (cosLat === 0 ? 1 : Math.abs(cosLat)));
+
+  const newLat = Number((vessel.position.lat + dLat).toFixed(6));
+  const newLng = Number((vessel.position.lng + dLng).toFixed(6));
+  const compassDirection = getCompassDirection16(vessel.headingDeg);
+
+  return {
+    position: { lat: newLat, lng: newLng },
+    headingDeg: vessel.headingDeg,
+    compassDirection,
+  };
+}
+
 export function generateScrubberTelemetry(base?: Partial<ScrubberTelemetry>): ScrubberTelemetry {
   const now = new Date().toISOString();
   const soxPpm = base?.soxPpm ?? Number((12 + Math.random() * 8).toFixed(1)); // 12~20 ppm (기준 25 이하)

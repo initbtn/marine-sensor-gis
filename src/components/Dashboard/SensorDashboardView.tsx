@@ -6,7 +6,9 @@ import {
   UserRole,
   OperatingMode,
   EquipmentHealthScore,
+  Position,
 } from '../../types/telemetry';
+import { getCompassDirection16 } from '../../services/mockTelemetry';
 import { MarineTheme } from '../../styles/theme';
 import { MarineMap } from '../Map/MarineMap';
 import { TelemetryChart } from '../Chart/TelemetryChart';
@@ -31,6 +33,7 @@ export interface SensorDashboardViewProps {
   vessels: VesselInfo[];
   selectedVessel: VesselInfo | undefined;
   onSelectVessel?: (vesselId: string) => void;
+  trackHistory?: Position[];
   facilityTab: 'SCRUBBER' | 'BWTS';
   onTabChange: (tab: 'SCRUBBER' | 'BWTS') => void;
   currentRole: UserRole;
@@ -155,6 +158,7 @@ export const SensorDashboardView: React.FC<SensorDashboardViewProps> = React.mem
   vessels,
   selectedVessel,
   onSelectVessel,
+  trackHistory,
   facilityTab,
   onTabChange,
   currentRole,
@@ -208,15 +212,23 @@ export const SensorDashboardView: React.FC<SensorDashboardViewProps> = React.mem
                   </span>
                 )}
               </div>
-              <span className="text-xs text-marine-secondary">
-                좌표: {selectedVessel?.position.lat.toFixed(4)}°N, {selectedVessel?.position.lng.toFixed(4)}°E
-              </span>
+              <div className="flex items-center gap-2 flex-wrap text-xs text-marine-secondary">
+                <span>
+                  좌표: {selectedVessel?.position.lat.toFixed(4)}°N, {selectedVessel?.position.lng.toFixed(4)}°E
+                </span>
+                {selectedVessel && (
+                  <span className="text-marine-cyan font-semibold">
+                    | 침로: {selectedVessel.headingDeg}° {getCompassDirection16(selectedVessel.headingDeg)} ({selectedVessel.speedKts} kts)
+                  </span>
+                )}
+              </div>
             </div>
             <div className="rounded-lg overflow-hidden border border-slate-700/60 h-[380px] md:h-[420px]">
               <MarineMap
                 vessels={vessels}
                 selectedVessel={selectedVessel}
                 onSelectVessel={onSelectVessel}
+                trackHistory={trackHistory}
               />
             </div>
           </div>
