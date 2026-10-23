@@ -43,10 +43,21 @@ export const MarineAppShell: React.FC = () => {
     setSelectedVesselId,
     vessels,
     alarms,
+    isStreaming,
+    advanceVesselPositions,
   } = useMarineDashboardStore();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const location = useLocation();
+
+  // 실시간 선박 항행 데드레커닝 시뮬레이션 (전역 영속 실행: /gis 및 / 대시보드 무중단 보장)
+  useEffect(() => {
+    if (!isStreaming) return;
+    const interval = setInterval(() => {
+      advanceVesselPositions(5);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isStreaming, advanceVesselPositions]);
 
   // 화면 이동 시 자동 PAGE_VIEW 감사 로그 기록 (Zero-PII)
   useEffect(() => {

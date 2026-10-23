@@ -96,11 +96,12 @@ export interface DeadReckoningResult {
 
 /**
  * Calculates new vessel coordinates based on dead reckoning (speed, heading, elapsed time)
+ * Default simulationSpeedMultiplier set to 25.0x for visible real-time HMI tracking
  */
 export function calculateDeadReckoningPosition(
   vessel: VesselInfo,
   deltaSeconds: number = 5,
-  simulationSpeedMultiplier: number = 1.0
+  simulationSpeedMultiplier: number = 25.0
 ): DeadReckoningResult {
   const headingRad = (vessel.headingDeg * Math.PI) / 180;
   // 1 knot = 1 nautical mile / hour = 1/3600 nm/s
