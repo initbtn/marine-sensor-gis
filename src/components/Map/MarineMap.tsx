@@ -346,7 +346,7 @@ export const MarineMap: React.FC<MarineMapProps> = ({
             <button
               type="button"
               onClick={() => setIsLegendOpen(false)}
-              className="md:hidden text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded cursor-pointer"
+              className="md:hidden text-slate-400 hover:text-white text-sm w-8 h-8 flex items-center justify-center rounded cursor-pointer"
               aria-label="범례 닫기"
             >
               ✕

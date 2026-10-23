@@ -54,7 +54,8 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     const markerHtml = await vesselMarkers.first().innerHTML();
     expect(markerHtml).toContain('rotate(');
 
-    // 3. 지도 우상단 범례에 침로 벡터 및 운항 항적 항목 표출 검증
+    // 3. 지도 우상단 범례에 침로 벡터 및 운항 항적 항목 표출 검증 (데스크톱에서는 토글 버튼 숨김)
+    await expect(page.locator('[data-testid="btn-toggle-legend"]')).not.toBeVisible();
     await expect(page.locator('text=선박 침로 벡터 (Heading)')).toBeVisible();
     await expect(page.locator('text=운항 항적 (Track)')).toBeVisible();
 
