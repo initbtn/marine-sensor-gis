@@ -29,17 +29,37 @@ describe('Vessel Dead Reckoning & Navigation Engine', () => {
 
   describe('calculateDeadReckoningPosition', () => {
     it('advances vessel latitude and longitude based on speed and heading', () => {
-      const vessel = { ...INITIAL_VESSELS[0] }; // VSL-001, lat: 34.85, lng: 128.75, speed: 18.4, heading: 215 (SW)
+      const vessel = { ...INITIAL_VESSELS[0] }; // VSL-001, Korea Strait TSS, heading: 195 (SSW)
       const initialPos = { ...vessel.position };
 
       // Advance by 60 seconds (with reasonable simulation scale)
       const next = calculateDeadReckoningPosition(vessel, 60);
 
-      // Heading 215 is South-West: lat should decrease (South), lng should decrease (West)
+      // Heading 195 is South-Southwest: lat should decrease (South), lng should decrease slightly (West)
       expect(next.position.lat).toBeLessThan(initialPos.lat);
       expect(next.position.lng).toBeLessThan(initialPos.lng);
-      expect(next.headingDeg).toBe(215);
-      expect(next.compassDirection).toBe('SW');
+      expect(next.headingDeg).toBe(195);
+      expect(next.compassDirection).toBe('SSW');
+    });
+
+    it('VSL-001: 부산항 남외항~대한해협 서수로(TSS) 해상 항행 중 육지(거제도/부산도심)를 침범하지 않는다', () => {
+      const vsl1 = INITIAL_VESSELS[0];
+      // 1. 초기 좌표가 부산 도심 육지나 거제도 육지가 아닌 대한해협 서수로 공해상에 위치하는지 검증
+      expect(vsl1.position.lat).toBeLessThanOrEqual(35.05);
+      expect(vsl1.position.lat).toBeGreaterThanOrEqual(34.50);
+      expect(vsl1.position.lng).toBeGreaterThanOrEqual(129.00);
+      expect(vsl1.position.lng).toBeLessThanOrEqual(129.15);
+      expect(vsl1.headingDeg).toBe(195);
+
+      // 2. 20 스텝 (100초 데드레커닝) 동안 거제도 동쪽(128.80 이하)이나 대마도(129.25 이상)로 벗어나지 않고 서수로 심해 유지
+      let current = { ...vsl1 };
+      for (let i = 0; i < 20; i++) {
+        const res = calculateDeadReckoningPosition(current, 5);
+        current.position = res.position;
+      }
+      expect(current.position.lat).toBeGreaterThan(34.10);
+      expect(current.position.lng).toBeGreaterThanOrEqual(128.85);
+      expect(current.position.lng).toBeLessThanOrEqual(129.15);
     });
 
     it('advances North-East for heading 45', () => {

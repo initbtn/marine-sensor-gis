@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MarineMap } from '../src/components/Map/MarineMap';
+import { MarineMap, createVesselIcon } from '../src/components/Map/MarineMap';
 import { FullGisPage } from '../src/components/Pages/FullGisPage';
 import { INITIAL_VESSELS } from '../src/services/mockTelemetry';
 import { useMarineDashboardStore } from '../src/stores/useMarineDashboardStore';
@@ -165,5 +165,20 @@ describe('MarineMap & MapViewController GIS Navigation Tests', () => {
     fireEvent.click(closeBtn);
     expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
     expect(legendPanel.className).toContain('hidden');
+  });
+
+  it('createVesselIcon: 이중 앵커 오프셋(translate(-50%, -50%))이 제거되고 중심 회전 정렬되어야 한다', () => {
+    const icon = createVesselIcon('NORMAL', true, 195);
+    const options = (icon as any).options;
+
+    // 1. iconSize와 iconAnchor가 1:1 중심 정렬 ([36, 36] -> [18, 18])인지 검증
+    expect(options.iconSize).toEqual([36, 36]);
+    expect(options.iconAnchor).toEqual([18, 18]);
+
+    // 2. 내부 HTML에 translate(-50%, -50%) 이중 시프트가 없어야 함
+    expect(options.html).not.toContain('translate(-50%, -50%)');
+    // 3. transform-origin: center center 및 rotate 각도 유지
+    expect(options.html).toContain('rotate(195deg)');
+    expect(options.html).toContain('transform-origin: center center');
   });
 });
