@@ -16,7 +16,7 @@ import { DEFAULT_VESSEL_TRACKS, getCompassDirection16 } from '../../services/moc
 import { Compass, Crosshair, Layers } from 'lucide-react';
 
 // Custom vessel SVG marker creator with heading rotation (IEC 62288)
-const createVesselIcon = (
+export const createVesselIcon = (
   status: 'NORMAL' | 'WARNING' | 'CRITICAL',
   isSelected: boolean,
   headingDeg: number = 0
@@ -34,7 +34,7 @@ const createVesselIcon = (
   return L.divIcon({
     className: 'custom-vessel-marker',
     html: `
-      <div style="transform: translate(-50%, -50%) rotate(${headingDeg}deg); display: flex; align-items: center; justify-content: center; transition: transform 0.4s ease;">
+      <div style="width: ${size}px; height: ${size}px; transform: rotate(${headingDeg}deg); transform-origin: center center; display: flex; align-items: center; justify-content: center; transition: transform 0.4s ease;">
         <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.6));">
           <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
           <line x1="12" y1="2" x2="12" y2="0" stroke="#FFFFFF" stroke-width="2" />

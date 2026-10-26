@@ -14,9 +14,9 @@ export const INITIAL_VESSELS: VesselInfo[] = [
     callSign: 'D7AA2',
     vesselType: 'Container Ship (15,000 TEU)',
     flag: 'Republic of Korea',
-    position: { lat: 34.85, lng: 128.75 }, // 부산-거제 인근 해역
+    position: { lat: 34.66, lng: 129.05 }, // 대한해협 서수로 통항분리대(TSS) 남하 항로
     speedKts: 18.4,
-    headingDeg: 215,
+    headingDeg: 195,
     destination: 'SGP SIN',
     eta: '2026-09-29 08:00',
     status: 'NORMAL',
@@ -53,10 +53,10 @@ export const INITIAL_VESSELS: VesselInfo[] = [
 
 export const DEFAULT_VESSEL_TRACKS: Record<string, { lat: number; lng: number }[]> = {
   'VSL-001': [
-    { lat: 35.102, lng: 129.040 }, // 부산 신항 출항
-    { lat: 35.020, lng: 128.950 },
-    { lat: 34.930, lng: 128.840 },
-    { lat: 34.850, lng: 128.750 }, // 현재 위치 (거제도 남동방)
+    { lat: 35.020, lng: 129.080 }, // 부산항 남외항 출항 수로
+    { lat: 34.900, lng: 129.070 }, // 대한해협 서수로 북단 진입
+    { lat: 34.780, lng: 129.060 }, // 통항분리대(TSS) 남하
+    { lat: 34.660, lng: 129.050 }, // 현재 위치 (대한해협 서수로 중앙 심해)
   ],
   'VSL-002': [
     { lat: 1.160, lng: 103.620 },  // 말라카 해협 진입

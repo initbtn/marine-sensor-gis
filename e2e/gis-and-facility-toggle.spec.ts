@@ -64,21 +64,27 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     expect(await svgPaths.count()).toBeGreaterThanOrEqual(2);
   });
 
-  test('실시간 데드레커닝 항행: 선박 침로(215° SW) 및 방위 텍스트가 대시보드와 마커 툴팁에 동적으로 표출되어야 한다', async ({ page }) => {
+  test('실시간 데드레커닝 항행: 선박 침로(195° SSW) 및 방위 텍스트가 대시보드와 마커 툴팁에 동적으로 표출되어야 한다', async ({ page }) => {
     await page.goto('/');
 
     // 1. 대시보드 좌측 상단 지도 헤더에 선박 좌표 및 침로 방위 텍스트 노출 검증
     const headingIndicator = page.locator('text=/침로: \\d+° [A-Z]+/');
     await expect(headingIndicator.first()).toBeVisible();
 
-    // 초기 선박 VSL-001 (215° SW) 표기 확인
-    await expect(page.locator('text=/215° SW/').first()).toBeVisible();
+    // 초기 선박 VSL-001 (195° SSW) 표기 확인
+    await expect(page.locator('text=/195° SSW/').first()).toBeVisible();
 
     // 2. Leaflet 맵 마커 상단 툴팁에 선박명과 방위 각도 텍스트가 포함되어 있는지 검증
     const vesselTooltip = page.locator('.leaflet-tooltip');
     await expect(vesselTooltip.first()).toBeVisible();
     await expect(vesselTooltip.first()).toContainText('PANAMAX PIONEER');
-    await expect(vesselTooltip.first()).toContainText('215° SW');
+    await expect(vesselTooltip.first()).toContainText('195° SSW');
+
+    // 3. 선박 마커 div에 이중 오프셋 translate(-50%, -50%)가 없고 정상 1:1 회전 스타일인지 검증
+    const vesselMarker = page.locator('.custom-vessel-marker').first();
+    const markerHtml = await vesselMarker.innerHTML();
+    expect(markerHtml).not.toContain('translate(-50%, -50%)');
+    expect(markerHtml).toContain('rotate(195deg)');
   });
 
   test('모바일 뷰포트: 지도 범례가 기본 접힘 상태이고, 토글 버튼 클릭 시 정상 표출/닫힘 동작해야 한다', async ({ page }) => {
