@@ -9,10 +9,10 @@
 ```
 [2. Supabase 실시간 허브] ◄──(위성 Store-and-Forward / CDC)──► [1. GCP 선박 엣지 & WAS 게이트웨이]
   (PostgreSQL 17.11)                                          (FastAPI / Polars / e2-micro)
-                                                                           ▲│
-                                                               (다운링크)  ││  (단일 공개 API 게이트웨이)
-                                                                           │▼
-[3. Cloudflare R2 아카이브] ◄──(서버 SDK 스트리밍)──────────── [4. Vercel 엣지 프록시 & UI]
+                                                                    │▲                 │▲
+                                                        (다운링크)  ││ (단일 게이트웨이) ││ (서버 Storage SDK)
+                                                                    ▼│                 ▼│
+[3. Cloudflare R2 아카이브] ◄── (전자해도 읽기 CDN 서빙) ───── [4. Vercel 엣지 프록시 & UI]
   (S3-compatible Object Storage)                                 (React 18 + ECharts + Leaflet)
 ```
 
