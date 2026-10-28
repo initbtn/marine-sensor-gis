@@ -131,3 +131,9 @@
    - PR #23 `main` 브랜치 Squash 머지 및 Vercel 프로덕션 배포 완료 (`https://marine-sensor-gis.vercel.app`)
 
 
+8. **아키텍처 보안 규율 지침 반영: 단일 공개 WAS API 게이트웨이 경유 DB 접근 강제 및 스토리지 직접 쓰기 차단 명세화 (Issue #24, PR #25)**:
+   - `docs/spec/maritime-cloud-edge-architecture.md`: 브라우저의 DB 직접 접근/자격증명 노출을 원천 차단하고 WAS 게이트웨이 단일 경유 원칙 명시, 클라이언트 스토리지 직접 쓰기(Presigned PUT) 금지 및 백엔드 Storage SDK 스트리밍 저장 규율 수립
+   - `package.json` & `package-lock.json`: 프론트엔드 내 미사용 `@supabase/supabase-js` 및 전이 의존성 132줄 완전 제거로 번들 최적화 및 제로 자격증명 공격 표면 축소
+   - `change-flow-adapter.md`: §5 거버넌스 항목에 아키텍처 보안 게이트웨이 및 스토리지 규율 행 추가
+   - Tier 1: Vitest 17개 파일 92개 테스트 통과 / Tier 2: Playwright 12개 테스트 100% 통과
+   - PR #25 `main` 브랜치 Squash 머지 (`9e36b4b`) 및 Vercel 프로덕션 배포 완료 (`https://marine-sensor-gis.vercel.app`)
