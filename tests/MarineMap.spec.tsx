@@ -15,13 +15,16 @@ vi.mock('react-leaflet', () => ({
   Polygon: ({ children }: any) => <div data-testid="leaflet-polygon">{children}</div>,
   Polyline: () => <div data-testid="leaflet-polyline" />,
   CircleMarker: ({ children }: any) => <div data-testid="leaflet-circle-marker">{children}</div>,
+  Circle: ({ children }: any) => <div data-testid="leaflet-circle">{children}</div>,
   Tooltip: ({ children }: any) => <div data-testid="leaflet-tooltip">{children}</div>,
   Popup: ({ children }: any) => <div data-testid="leaflet-popup">{children}</div>,
-  Marker: ({ eventHandlers, children, position }: any) => (
+  Marker: ({ eventHandlers, children, position, ...props }: any) => (
     <div
       data-testid="leaflet-marker"
       data-lat={position[0]}
       data-lng={position[1]}
+      data-marker-type={props['data-marker-type'] || 'generic'}
+      data-vessel-id={props['data-vessel-id']}
       onClick={eventHandlers?.click}
     >
       {children}
@@ -117,10 +120,11 @@ describe('MarineMap & MapViewController GIS Navigation Tests', () => {
     );
 
     const markers = screen.getAllByTestId('leaflet-marker');
-    expect(markers).toHaveLength(INITIAL_VESSELS.length);
+    const vesselMarkers = markers.filter((m) => m.getAttribute('data-marker-type') === 'vessel');
+    expect(vesselMarkers).toHaveLength(INITIAL_VESSELS.length);
 
-    // 두 번째 마커 (ECO OCEAN, VSL-002) 클릭
-    fireEvent.click(markers[1]);
+    // 두 번째 선박 마커 (ECO OCEAN, VSL-002) 클릭
+    fireEvent.click(vesselMarkers[1]);
     expect(handleSelectVessel).toHaveBeenCalledWith('VSL-002');
   });
 
@@ -131,9 +135,10 @@ describe('MarineMap & MapViewController GIS Navigation Tests', () => {
     expect(screen.getByText(/현재 추적선: PANAMAX PIONEER/)).toBeInTheDocument();
 
     const markers = screen.getAllByTestId('leaflet-marker');
+    const vesselMarkers = markers.filter((m) => m.getAttribute('data-marker-type') === 'vessel');
     // VSL-002 마커 클릭
     act(() => {
-      fireEvent.click(markers[1]);
+      fireEvent.click(vesselMarkers[1]);
     });
 
     // 스토어 상태 변경 확인
@@ -180,5 +185,42 @@ describe('MarineMap & MapViewController GIS Navigation Tests', () => {
     // 3. transform-origin: center center 및 rotate 각도 유지
     expect(options.html).toContain('rotate(195deg)');
     expect(options.html).toContain('transform-origin: center center');
+  });
+
+  it('평형수 기록(ballastRecords)이 주어지면 지도 위에 주입/배출 마커 및 서클이 렌더링되어야 한다', () => {
+    const mockBallastRecords = [
+      {
+        recordId: 'BWRB-TEST-001',
+        vesselId: 'VSL-001',
+        vesselName: 'PANAMAX PIONEER',
+        operationType: 'UPTAKE' as const,
+        startedAt: '2026-10-31T08:30:00Z',
+        completedAt: '2026-10-31T10:45:00Z',
+        latitude: 35.085,
+        longitude: 128.825,
+        locationName: '부산항 신항',
+        tankName: '3P/3S Ballast Tank',
+        volumeM3: 2450,
+        flowRateM3h: 1100,
+        troPpm: 0.12,
+        uvIntensityWm2: 285,
+        status: 'COMPLIANT' as const,
+        operatorId: 'usr_eng_1',
+      },
+    ];
+
+    render(
+      <MarineMap
+        vessels={INITIAL_VESSELS}
+        selectedVessel={INITIAL_VESSELS[0]}
+        ballastRecords={mockBallastRecords}
+      />
+    );
+
+    // 평형수 서클 렌더링 검증
+    expect(screen.getByTestId('leaflet-circle')).toBeInTheDocument();
+    // 마커 총합 (선박 3척 + 평형수 작업 1건 = 4개)
+    const markers = screen.getAllByTestId('leaflet-marker');
+    expect(markers.length).toBe(INITIAL_VESSELS.length + 1);
   });
 });

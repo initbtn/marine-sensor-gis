@@ -110,4 +110,36 @@ test.describe('GIS 항적/침로 표출 및 평형수(BWTS) 탭 전환 E2E 결�
     await closeBtn.click();
     await expect(legendPanel).not.toBeVisible();
   });
+
+  test('평형수 주입·배출 공간 마커 및 전자 기록부(BWRB) 모달이 정상 동작해야 한다', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. 지도 상 평형수 커스텀 마커(.custom-ballast-marker) 및 범례 체크박스 확인
+    const ballastMarkers = page.locator('.custom-ballast-marker');
+    await expect(ballastMarkers.first()).toBeVisible();
+
+    const ballastLayerChk = page.locator('[data-testid="chk-ballast-layer"]');
+    await expect(ballastLayerChk).toBeChecked();
+
+    // 2. 평형수 기록부 버튼 클릭 시 BWRB 모달 노출 검증
+    const openModalBtn = page.locator('[data-testid="btn-open-ballast-modal"]');
+    await expect(openModalBtn).toBeVisible();
+    await openModalBtn.click();
+
+    const modal = page.locator('[data-testid="ballast-record-modal"]');
+    await expect(modal).toBeVisible();
+    await expect(page.locator('text=IMO BWM 선박평형수관리기록부 (Electronic BWRB)')).toBeVisible();
+    await expect(page.locator('text=총 주입량 (Uptake)')).toBeVisible();
+    await expect(page.locator('text=총 배출량 (Discharge)')).toBeVisible();
+
+    // 3. 필터 버튼 동작 검증 (배출 필터 클릭)
+    const dischargeFilterBtn = page.locator('button:has-text("⬆ 배출")');
+    await dischargeFilterBtn.click();
+    await expect(page.locator('text=BWRB-2026-003')).toBeVisible();
+
+    // 4. 모달 닫기
+    const closeModalBtn = page.locator('[data-testid="btn-close-ballast-modal"]');
+    await closeModalBtn.click();
+    await expect(modal).not.toBeVisible();
+  });
 });

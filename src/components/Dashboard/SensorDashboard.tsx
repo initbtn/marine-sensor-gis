@@ -7,6 +7,7 @@ import {
 import { dualDbSyncEngine } from '../../services/dualDbSyncEngine';
 import { sendTelegramAlert } from '../../services/telegramAlertService';
 import { accessAuditService } from '../../services/accessAuditService';
+import { ballastRecordService } from '../../services/ballastRecordService';
 import { useMarineDashboardStore } from '../../stores/useMarineDashboardStore';
 import { useTelemetryStore } from '../../stores/useTelemetryStore';
 import { useTelemetryStream } from '../../hooks/useTelemetryStream';
@@ -14,6 +15,7 @@ import { SensorDashboardView } from './SensorDashboardView';
 import { AlarmList } from './AlarmList';
 import { ModeToggleBar } from './ModeToggleBar';
 import { RoleSwitcher } from '../Common/RoleSwitcher';
+import { BallastRecordModal } from './BallastRecordModal';
 import { ShieldAlert, Play, Pause } from 'lucide-react';
 
 export interface SensorDashboardProps {
@@ -21,6 +23,7 @@ export interface SensorDashboardProps {
 }
 
 export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = true }) => {
+  const [isBallastModalOpen, setIsBallastModalOpen] = React.useState(false);
   const {
     currentRole,
     setRole,
@@ -273,6 +276,8 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
         selectedVessel={selectedVessel}
         onSelectVessel={setSelectedVesselId}
         trackHistory={selectedVessel ? trackHistories[selectedVessel.id] : undefined}
+        ballastRecords={ballastRecordService.getRecords()}
+        onOpenBallastModal={() => setIsBallastModalOpen(true)}
         facilityTab={facilityTab}
         onTabChange={setFacilityTab}
         currentRole={currentRole}
@@ -283,6 +288,14 @@ export const SensorDashboard: React.FC<SensorDashboardProps> = ({ standalone = t
         cloudAggregates={cloudAggregates}
         bypassValveOpen={bypassValveOpen}
         onToggleBypass={handleToggleBypass}
+      />
+
+      {/* Ballast Water Record Book Modal */}
+      <BallastRecordModal
+        isOpen={isBallastModalOpen}
+        onClose={() => setIsBallastModalOpen(false)}
+        selectedVesselId={selectedVessel?.id}
+        selectedVesselName={selectedVessel?.name}
       />
 
       {/* Alarm Log Panel */}

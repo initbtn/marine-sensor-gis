@@ -17,6 +17,7 @@ import { HeatmapChart } from '../Chart/HeatmapChart';
 import { RadarChart } from '../Chart/RadarChart';
 import { MetricCard } from '../Common/MetricCard';
 import { SensorCards } from './SensorCards';
+import { BallastRecord } from '../../types/ballast';
 import { ShieldAlert, CheckCircle2, BarChart3, Activity, Droplets } from 'lucide-react';
 
 export interface CloudAggregates {
@@ -34,6 +35,8 @@ export interface SensorDashboardViewProps {
   selectedVessel: VesselInfo | undefined;
   onSelectVessel?: (vesselId: string) => void;
   trackHistory?: Position[];
+  ballastRecords?: BallastRecord[];
+  onOpenBallastModal?: () => void;
   facilityTab: 'SCRUBBER' | 'BWTS';
   onTabChange: (tab: 'SCRUBBER' | 'BWTS') => void;
   currentRole: UserRole;
@@ -159,6 +162,8 @@ export const SensorDashboardView: React.FC<SensorDashboardViewProps> = React.mem
   selectedVessel,
   onSelectVessel,
   trackHistory,
+  ballastRecords,
+  onOpenBallastModal,
   facilityTab,
   onTabChange,
   currentRole,
@@ -229,6 +234,8 @@ export const SensorDashboardView: React.FC<SensorDashboardViewProps> = React.mem
                 selectedVessel={selectedVessel}
                 onSelectVessel={onSelectVessel}
                 trackHistory={trackHistory}
+                ballastRecords={ballastRecords}
+                onOpenBallastModal={onOpenBallastModal}
               />
             </div>
           </div>
