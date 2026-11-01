@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MarineMap } from '../Map/MarineMap';
 import { useMarineDashboardStore } from '../../stores/useMarineDashboardStore';
+import { ballastRecordService } from '../../services/ballastRecordService';
+import { BallastRecordModal } from '../Dashboard/BallastRecordModal';
 
 export const FullGisPage: React.FC = () => {
   const { vessels, selectedVesselId, setSelectedVesselId, trackHistories } = useMarineDashboardStore();
+  const [isBallastModalOpen, setIsBallastModalOpen] = useState(false);
   const selectedVessel = vessels.find((v) => v.id === selectedVesselId) || vessels[0];
 
   return (
@@ -30,9 +33,18 @@ export const FullGisPage: React.FC = () => {
             selectedVessel={selectedVessel}
             onSelectVessel={setSelectedVesselId}
             trackHistory={selectedVessel ? trackHistories[selectedVessel.id] : undefined}
+            ballastRecords={ballastRecordService.getRecords()}
+            onOpenBallastModal={() => setIsBallastModalOpen(true)}
           />
         </div>
       </div>
+
+      <BallastRecordModal
+        isOpen={isBallastModalOpen}
+        onClose={() => setIsBallastModalOpen(false)}
+        selectedVesselId={selectedVessel?.id}
+        selectedVesselName={selectedVessel?.name}
+      />
     </div>
   );
 };
