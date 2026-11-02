@@ -1,6 +1,6 @@
 # EcoMarine GIS (해양 친환경 설비 위성 원격 관제 플랫폼)
 
-> **파나시아(PANASIA) 친환경 설비(PaSOx Scrubber / GloEn-Patrol BWTS) 위성 원격 관제 및 IMO/선급 표준 텔레메트리 플랫폼**
+> **해양 친환경 설비(PaSOx Scrubber / GloEn-Patrol BWTS) 위성 원격 관제 및 IMO/선급 표준 텔레메트리 플랫폼**
 
 [![CI Pipeline](https://github.com/initbtn/marine-sensor-gis/actions/workflows/ci.yml/badge.svg)](https://github.com/initbtn/marine-sensor-gis/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
@@ -16,7 +16,7 @@
 
 ## 1. 프로젝트 개요 (Overview)
 
-**EcoMarine GIS**는 글로벌 해양 친환경 설비 선도기업인 **파나시아(PANASIA)**의 친환경 솔루션(ES) 장비를 대상으로, 국제해사기구(IMO)와 주요 선급(KR, DNV, ABS 등)의 엄격한 환경 규제를 실시간으로 감시하고 위성 통신 단절 시에도 데이터 무결성을 보장하는 **산업용 해양 GIS 위성 원격 관제 웹 플랫폼**입니다.
+**EcoMarine GIS**는 글로벌 해양 친환경 설비 제조사(EcoMarine)의 친환경 솔루션(ES) 장비를 대상으로, 국제해사기구(IMO)와 주요 선급(KR, DNV, ABS 등)의 엄격한 환경 규제를 실시간으로 감시하고 위성 통신 단절 시에도 데이터 무결성을 보장하는 **산업용 해양 GIS 위성 원격 관제 웹 플랫폼**입니다.
 
 ### 핵심 관제 설비 및 규제 기준
 1. **PaSOx (선박 배기가스 탈황 스크러버 — IMO MARPOL Annex VI & MEPC.340(77))**
@@ -83,7 +83,7 @@ flowchart TD
 | **1. 🚢 선박 기관사**<br>*(Chief Engineer)* | 설비 중심 0ms 무지연 계측 및 비상 알람 즉각 조치 | • **원형 게이지 (Circular Gauge)**: SOx ppm, 배출수 pH<br>• **초 단위 고주파 실시간 차트 (Line)**: 1초 펄스 파형<br>• **원클릭 알람 조치(Acknowledge) 콘솔** 및 에지 큐 인디케이터 |
 | **2. 🏢 육상 관제관**<br>*(Fleet Operator)* | 전 세계 대양 선단 운항 위치 및 친환경 설비 총괄 관제 | • **해양 GIS 관제 지도 (Leaflet)**: 선수각(Heading) 회전 마커, 24시간 항적, ECA 규제 해역 오버레이<br>• **선단 상태 도넛 차트 (Doughnut)**: 정상/주의/위반 선박 분포<br>• **선단 누적 배출량 막대 차트 (Bar)** |
 | **3. ⚖️ 규제 감사관**<br>*(Compliance Officer)* | IMO 및 선급(Class) 검사관 대상 법정 규제 준수율 증빙 | • **IMO 종합 준수율 게이지 (%)** (목표 99.5% 대비 달성률)<br>• **위반 발생 히트맵 매트릭스 (Heatmap)** (요일/시간대별 패턴)<br>• **선급 승인 전자 기록부 (ERB Table)** 및 CSV 내보내기 |
-| **4. 🔧 원격 진단원**<br>*(Pan-Hawk Tech)* | 파나시아 육상 서비스 센터 비대면 예지보전 A/S | • **설비 건전성 5축 레이더 차트 (Radar)**: CEMS 신뢰도, 필터 차압 여유, UV 수명, 펌프 효율, 중화제 안정도<br>• **상관관계 산점도 (Scatter)**: 처리 유량 대비 차압 곡선<br>• **소모품 교체 예지보전 타임라인** |
+| **4. 🔧 원격 진단원**<br>*(Eco-Hawk Tech)* | 육상 서비스 센터 비대면 예지보전 A/S | • **설비 건전성 5축 레이더 차트 (Radar)**: CEMS 신뢰도, 필터 차압 여유, UV 수명, 펌프 효율, 중화제 안정도<br>• **상관관계 산점도 (Scatter)**: 처리 유량 대비 차압 곡선<br>• **소모품 교체 예지보전 타임라인** |
 
 ---
 

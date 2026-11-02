@@ -2,7 +2,7 @@
 import { BallastRecord, BallastFilterOptions, BallastSummaryStats } from '../types/ballast';
 
 /**
- * 파나시아 GloEn-Patrol BWTS 연계 선박평형수 기록부(BWRB) 서비스
+ * 선박평형수처리장치(BWTS) 연계 선박평형수 기록부(BWRB) 서비스
  * 
  * - IMO BWM D-2 준수 이력 데이터 관리
  * - 보충(주입, Uptake) 및 배출(Discharge) 위치/시간/수량 추적

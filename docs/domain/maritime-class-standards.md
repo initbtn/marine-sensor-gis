@@ -26,10 +26,10 @@
 
 ## 2. 기자재 인증의 핵심: 형식승인 (Type Approval, TA)
 
-파나시아(PANASIA)의 **탈황장치(PaSOx)**, **선박평형수처리장치(GloEn-Patrol)**, **탄소포집설비(PaCCUS)**와 같은 선박 친환경 기자재는 선박에 장착되기 전 반드시 선급의 **형식승인(Type Approval)**을 획득해야 합니다.
+친환경 설비 제조사(EcoMarine)의 **탈황장치(PaSOx)**, **선박평형수처리장치(GloEn-Patrol)**, **탄소포집설비(PaCCUS)**와 같은 선박 친환경 기자재는 선박에 장착되기 전 반드시 선급의 **형식승인(Type Approval)**을 획득해야 합니다.
 
 ```
- [제조사 (파나시아)] ──► 설계 도면 및 육상 테스트 베드 실증 (Land-based Test)
+ [제조사 (EcoMarine)] ──► 설계 도면 및 육상 테스트 베드 실증 (Land-based Test)
          │
          ▼
  [선급/기국 감사]   ──► 실선 탑재 시험 (Shipboard Test, 6개월~1년 연속 운항)

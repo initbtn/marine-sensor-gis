@@ -13,7 +13,7 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
       MessageType: 'PositionReport',
       MetaData: {
         MMSI: 255805678,
-        ShipName: 'PANASIA PHOENIX',
+        ShipName: 'ECO PHOENIX',
         latitude: 35.0841,
         longitude: 129.0425,
         time_utc: '2026-10-18 00:40:12 UTC',
@@ -67,14 +67,14 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
       MessageType: 'ShipStaticData',
       MetaData: {
         MMSI: 255805678,
-        ShipName: 'PANASIA PHOENIX',
+        ShipName: 'ECO PHOENIX',
       },
       Message: {
         ShipStaticData: {
           MessageID: 5,
           ImoNumber: 9876543,
           CallSign: 'DSPE7',
-          Name: 'PANASIA PHOENIX',
+          Name: 'ECO PHOENIX',
           ShipType: 70,
           Destination: 'BUSAN NEW PORT',
           Dimension: { A: 100, B: 25, C: 10, D: 10 },
@@ -87,7 +87,7 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
 
     expect(adapted.imoNumber).toBe('9876543');
     expect(adapted.callSign).toBe('DSPE7');
-    expect(adapted.name).toBe('PANASIA PHOENIX');
+    expect(adapted.name).toBe('ECO PHOENIX');
     expect(adapted.destination).toBe('BUSAN NEW PORT');
     expect(adapted.lengthMeters).toBe(125); // A + B = 100 + 25
     expect(adapted.beamMeters).toBe(20);    // C + D = 10 + 10
@@ -110,7 +110,7 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
     };
 
     const update = {
-      name: 'PANASIA PHOENIX',
+      name: 'ECO PHOENIX',
       imoNumber: '9876543',
       position: { lat: 35.1, lng: 129.0 },
       speedKts: 15.2,
@@ -120,7 +120,7 @@ describe('글로벌 위성 AIS 메시지 어댑터 (aisMessageAdapter)', () => {
 
     const merged = mergeVesselTelemetry(baseVessel, update);
 
-    expect(merged.name).toBe('PANASIA PHOENIX');
+    expect(merged.name).toBe('ECO PHOENIX');
     expect(merged.imoNumber).toBe('9876543');
     expect(merged.position.lat).toBe(35.1);
     expect(merged.speedKts).toBe(15.2);

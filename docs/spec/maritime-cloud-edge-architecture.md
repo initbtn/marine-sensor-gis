@@ -1,6 +1,6 @@
 # 해양 엣지-클라우드 4대 인프라 아키텍처 명세서 (Maritime Cloud-Edge Architecture)
 
-이 문서는 파나시아(PANASIA) 친환경 설비(PaSOx Scrubber / GloEn-Patrol BWTS) 및 해양 센서 GIS 관제 플랫폼의 **4대 인프라(GCP 엣지, Supabase 허브, Cloudflare R2 아카이브, Vercel 프록시/웹)** 통합 설계와 양방향 데이터 배선 흐름을 규정한 정본 아키텍처 문서입니다.
+이 문서는 친환경 설비(PaSOx Scrubber / GloEn-Patrol BWTS) 및 해양 센서 GIS 관제 플랫폼의 **4대 인프라(GCP 엣지, Supabase 허브, Cloudflare R2 아카이브, Vercel 프록시/웹)** 통합 설계와 양방향 데이터 배선 흐름을 규정한 정본 아키텍처 문서입니다.
 
 ---
 
@@ -32,7 +32,7 @@
    - Scrubber 타워 차압, 세정수 pH, 배출수 탁도, PAH, CEMS SO₂/CO₂ 농도, BWTS 필터 차압, UV 강도 등을 100ms 주기로 생성.
 2. **엣지 전처리 및 1차 이상 판정**:
    - `Polars`로 1초 평균값 계산 및 IMO MEPC.340(77) 기준(SOx ECA 4.3ppm, Global 21.7ppm) 초과 여부 즉시 판정.
-   - `ONNX Runtime`으로 5축 건전성 지표(파나시아 판호크) 추론.
+   - `ONNX Runtime`으로 5축 건전성 지표(Eco-Hawk) 추론.
 3. **선박 버퍼링 및 위성 동기화**:
    - 1차 집계 데이터를 `marine_edge.telemetry_buffer`에 기록 (`status = 'PENDING'`).
    - 위성 네트워크가 정상이면 지상 관제 테이블 `marine_control.telemetry_logs`로 전송 후 `status = 'SYNCED'` 갱신.

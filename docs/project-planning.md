@@ -1,7 +1,7 @@
 # EcoMarine GIS 관제 플랫폼 기획 정본 명세서 (Project Planning Overview)
 
 > **문서 상태**: APPROVED (SSOT 정본)  
-> **프로젝트명**: 파나시아(PANASIA) 친환경 설비 실시간 센서 모니터링 & 해양 GIS 원격 위성관제 플랫폼 (EcoMarine Control Platform)  
+> **프로젝트명**: 해양 친환경 설비 실시간 센서 모니터링 & 해양 GIS 원격 위성관제 플랫폼 (EcoMarine Control Platform)  
 > **대상 저장소**: [initbtn/marine-sensor-gis](https://github.com/initbtn/marine-sensor-gis)  
 > **최종 갱신일**: 2026-10-18  
 > **버전**: v3.0.0 (공공데이터포털 PORT-MIS, 글로벌 AISStream, 4대 인프라 아키텍처 및 실측 데이터 계약 반영)
@@ -11,9 +11,9 @@
 ## 1. 프로젝트 주제 및 산업 도메인 배경 (Theme & Domain Background)
 
 ### 1.1. 관제 대상 및 핵심 주제
-본 프로젝트는 글로벌 해양 친환경 설비 선도기업인 **파나시아(PANASIA)**의 친환경 솔루션(ES) 장비를 대상으로, 국제해사기구(IMO) 환경 규제 준수 상태를 전 세계 대양에서 실시간으로 감시하고 위성 통신 단절 시에도 데이터 유실이 없도록 보장하는 **산업용 해양 GIS 위성 원격 관제 웹 플랫폼**입니다.
+본 프로젝트는 글로벌 해양 친환경 설비 제조사의 친환경 솔루션(ES) 장비를 대상으로, 국제해사기구(IMO) 환경 규제 준수 상태를 전 세계 대양에서 실시간으로 감시하고 위성 통신 단절 시에도 데이터 유실이 없도록 보장하는 **산업용 해양 GIS 위성 원격 관제 웹 플랫폼**입니다.
 
-### 1.2. 파나시아(PANASIA) 주력 친환경 설비 및 규제 기준 지표
+### 1.2. 주력 친환경 설비 및 규제 기준 지표
 1. **`PaSOx` (선박 배기가스 탈황 스크러버 — IMO MARPOL Annex VI 준수)**:
    - **배기가스 감시 지표**: SOx 농도(< 25 ppm 감시), SO2/CO2 비율($\le$ 4.3 ECA 감시, $\le$ 21.7 Global)
    - **배출 세정수(Washwater) 환경 감시 지표**:
@@ -67,7 +67,7 @@
 | 스프린트 | 마일스톤 주제 | 핵심 산출물 및 범위 | 상태 |
 |---|---|---|---|
 | **Sprint 1** | **도메인 UX 규율 & 4대 직무 스토리보드** | • 선급 표준(KR, DNV, ABS) 도메인 학습서<br>• 해양 HMI 4대 핵심 규율 및 다크 테마<br>• 4대 역할별 사용자 여정 및 ASCII 와이어프레임 | **COMPLETED** (PR #2) |
-| **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | • 8대 시각화 제품군 & 14대 파라미터 매트릭스<br>• 원형 게이지, 5축 레이더, 위반 히트맵, GIS 맵<br>• 파나시아 HMI 장식용 애니메이션 지양 규율 반영 | **COMPLETED** (PR #4) |
+| **Sprint 2** | **디자인 시스템 & 시각화 차트 CDD** | • 8대 시각화 제품군 & 14대 파라미터 매트릭스<br>• 원형 게이지, 5축 레이더, 위반 히트맵, GIS 맵<br>• 고성능 HMI 장식용 애니메이션 지양 규율 반영 | **COMPLETED** (PR #4) |
 | **Sprint 3** | **실측 오픈API 어댑터 & 실시간 파이프라인** | • 공공데이터(PORT-MIS) & AISStream 어댑터 (TDD)<br>• Supabase 이원화 스키마 DDL 배포 & Realtime<br>• Store-and-Forward 동기화 엔진 (`dualDbSyncEngine`)<br>• GCP 선박 엣지 데몬 컨테이너 배포<br>• 프론트엔드 실시간 웹소켓 연동 (`useTelemetryStream`) | **COMPLETED** (PR #6) |
 | **Sprint 4** | **4대 직무 대시보드 조립 & 원격 제어** | • 기관사/관제사/감사관/진단원 4대 대시보드 통합<br>• Vercel 엣지 프록시(`/api/edge`) 다운링크 연결<br>• 비상 바이패스 밸브 및 위성 단절 인터랙티브 시연<br>• 텔레그램 실시간 장애 알림 연동 | **COMPLETED** (PR #10) |
 | **Sprint 5** | **해양 디자인 시스템(MDS) 구축 & App Shell 라우터 아키텍처 및 순수 함수(SOLID) 리팩터링** | • 토스(TDS)/당근(Seed Design) 기반 3계층(Primitive/Semantic/Component) 디자인 토큰 체계<br>• 영속 App Shell(`MarineAppShell`) & 라우터 Outlet 구조 (10Hz 스트림 무중단 영속화)<br>• 데스크톱 상단 탭 ↔ 모바일 하단 바텀 네비게이션($\ge 44\text{px}$ 터치 타깃)<br>• Zustand 기반 고빈도 텔레메트리(`useTelemetryStore`) & 대시보드 상태(`useMarineDashboardStore`) 분리<br>• 순수 함수 컴포넌트(`React.memo`) & 4대 직무 시각화 매트릭스 완결 (`HeatmapChart`, `RadarChart`)<br>• 전 UI 컴포넌트 인라인 스타일 완전 제거 (`style={{ ... }}` 0개 달성)<br>• 해양 GIS 지도 동적 뷰포트 이동(`flyTo`) 및 전 선단 맞춤(`fitBounds`) | **COMPLETED** (PR #13) |
