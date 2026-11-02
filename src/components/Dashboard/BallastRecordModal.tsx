@@ -94,7 +94,7 @@ export const BallastRecordModal: React.FC<BallastRecordModalProps> = ({
                 )}
               </h2>
               <p className="text-xs text-marine-secondary mt-0.5">
-                파나시아 GloEn-Patrol™ 전기분해/자외선 살균 처리 및 주입·배출 수명주기 감사 기록
+                선박평형수처리설비(BWTS) 전기분해/자외선 살균 처리 및 주입·배출 수명주기 감사 기록
               </p>
             </div>
           </div>

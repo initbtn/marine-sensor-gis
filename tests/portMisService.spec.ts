@@ -31,8 +31,8 @@ const SAMPLE_SPECS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?
         <clsgn>3EKR5</clsgn>
         <vsslNo>SA1190</vsslNo>
         <imoNo>9876543</imoNo>
-        <vsslKorNm>파나시아 페닉스</vsslKorNm>
-        <vsslEngNm>PANASIA PHOENIX</vsslEngNm>
+        <vsslKorNm>에코 페닉스</vsslKorNm>
+        <vsslEngNm>ECO PHOENIX</vsslEngNm>
         <vsslKnd>53[케미칼 운반선]</vsslKnd>
         <vsslNlty>PA[파나마]</vsslNlty>
         <grtg>4151</grtg>
@@ -95,7 +95,7 @@ describe('PORT-MIS 공공데이터 선박 XML 파서 (portMisService)', () => {
 
     const v2 = vessels[1];
     expect(v2.imoNumber).toBe('9876543');
-    expect(v2.name).toBe('PANASIA PHOENIX');
+    expect(v2.name).toBe('ECO PHOENIX');
     expect(v2.flag).toBe('PA');
     expect(v2.grossTonnage).toBe(4151);
   });

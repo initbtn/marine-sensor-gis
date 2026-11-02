@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS marine_control.access_audit_logs (
     -- 단방향 해시로 생성된 비가역 난수 식별자 (usr_ + 10 hex characters)
     user_hash_id VARCHAR(32) NOT NULL,
     assigned_role VARCHAR(30) NOT NULL,      -- CHIEF_ENGINEER, CLASS_SURVEYOR, FLEET_OPERATOR, DIAGNOSTIC_TECH, GUEST
-    organization VARCHAR(50) DEFAULT 'PANASIA', -- KR, DNV, ABS, PANASIA, FLEET_OWNER
+    organization VARCHAR(50) DEFAULT 'MANUFACTURER', -- KR, DNV, ABS, MANUFACTURER, FLEET_OWNER
     action_type VARCHAR(50) NOT NULL,        -- PAGE_VIEW, BYPASS_TOGGLE, ALARM_ACK, MODE_TOGGLE, REPORT_DOWNLOAD
     target_path VARCHAR(100) NOT NULL,       -- /, /gis, /reports, /alarms, /audit
     session_duration_sec INT DEFAULT 0,      -- 체류 시간 (초)

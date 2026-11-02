@@ -9,7 +9,7 @@ export type MaritimeOrganization =
   | 'KR'            // 한국선급 (Korean Register)
   | 'DNV'           // 노르웨이선급 (Det Norske Veritas)
   | 'ABS'           // 미국선급 (American Bureau of Shipping)
-  | 'PANASIA'       // 파나시아 본사 및 현장 엔지니어링
+  | 'MANUFACTURER'  // 친환경설비 제조사 및 엔지니어링 본부
   | 'FLEET_OWNER'   // 선사/육상 선단 운항사
   | 'PUBLIC';       // 공개 방문자
 
