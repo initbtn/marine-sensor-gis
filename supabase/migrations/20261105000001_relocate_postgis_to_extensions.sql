@@ -7,17 +7,25 @@
 -- 1. Ensure extensions schema exists
 CREATE SCHEMA IF NOT EXISTS extensions;
 
--- 2. Drop existing postgis extension in public schema and dependent empty buffer structures
+-- 2. Drop existing postgis extension in public schema and dependent buffer structures
+-- Note: In PostgreSQL/Supabase, postgis has extrelocatable = false and requires DROP ... CASCADE
+-- when relocating from public to extensions.
 DROP EXTENSION IF EXISTS postgis CASCADE;
 
 -- 3. Re-enable postgis in dedicated extensions schema
 CREATE EXTENSION postgis SCHEMA extensions;
 
--- 4. Reconstruct geometry columns and GiST spatial indexes on marine_control tables
-ALTER TABLE marine_control.vessels ADD COLUMN IF NOT EXISTS geom geometry(Point, 4326);
+-- 4. Reconstruct geometry columns with explicit schema qualifier and GiST indexes
+ALTER TABLE marine_control.vessels ADD COLUMN IF NOT EXISTS geom extensions.geometry(Point, 4326);
 CREATE INDEX IF NOT EXISTS idx_vessels_geom ON marine_control.vessels USING GIST (geom);
 
-ALTER TABLE marine_control.eca_zones ADD COLUMN IF NOT EXISTS geom geometry(Polygon, 4326) NOT NULL;
+-- Backfill existing vessels geometry from lat/lng if present
+UPDATE marine_control.vessels 
+SET geom = extensions.ST_SetSRID(extensions.ST_MakePoint(lng, lat), 4326)
+WHERE lat IS NOT NULL AND lng IS NOT NULL AND geom IS NULL;
+
+-- Reconstruct eca_zones geometry column safely (nullable first, backfill if any, then enforce not null)
+ALTER TABLE marine_control.eca_zones ADD COLUMN IF NOT EXISTS geom extensions.geometry(Polygon, 4326);
 CREATE INDEX IF NOT EXISTS idx_eca_zones_geom ON marine_control.eca_zones USING GIST (geom);
 
 -- 5. Restore spatial trigger function and trigger
